@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import abc
 import operator
 import subprocess
 import sys
@@ -70,7 +71,9 @@ class FilteringResults(capellacore.NamedElement):
 
 
 class AbstractFilteringResult(capellacore.NamedElement, abstract=True):
-    pass
+    @property
+    @abc.abstractmethod
+    def filtered_objects(self) -> m.ElementList: ...
 
 
 class FilteringResult(FilteringCriterionSet, AbstractFilteringResult):
@@ -121,6 +124,22 @@ class ComposedFilteringResult(AbstractFilteringResult):
     exclusion = m.Containment["ExclusionFilteringResultSet"](
         "ExclusionFilteringResultSet", (NS, "ExclusionFilteringResultSet")
     )
+
+    @property
+    def filtered_objects(self) -> m.ElementList:
+        ids = set[str]()
+
+        for result in self.union.results:
+            ids |= {i.uuid for i in result}
+
+        for result in self.intersection.results:
+            ids &= {i.uuid for i in result}
+
+        for result in self.exclusion.results:
+            ids -= {i.uuid for i in result}
+
+        elems = [self._model._loader[i] for i in ids]
+        return m.ElementList(self._model, elems)
 
 
 class FilteringResultSet(capellacore.NamedElement):
