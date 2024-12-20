@@ -11,7 +11,7 @@ import typing as t
 import warnings
 
 import capellambse.model as m
-from capellambse.metamodel import capellacore, capellamodeller
+from capellambse.metamodel import capellacore, capellamodeller, modellingcore
 
 NS = m.Namespace(
     "http://www.polarsys.org/capella/filtering/{VERSION}",
@@ -44,7 +44,7 @@ class FilteringCriterion(capellacore.NamedElement):
     _xmltag = "ownedFilteringCriteria"
 
     filtered_objects = m.Backref[m.ModelElement](
-        (), "filtering_criteria", aslist=m.MixedElementList
+        (modellingcore.NS, "ModelElement"), "filtering_criteria"
     )
 
 
@@ -142,8 +142,8 @@ class IntersectionFilteringResultSet(FilteringResultSet):
 
 
 def init() -> None:
-    capellamodeller.SystemEngineering.filtering_model = m.DirectProxyAccessor(
-        FilteringModel
+    capellamodeller.SystemEngineering.filtering_model = m.Single(
+        m.Filter("extensions", (NS, "FilteringModel"))
     )
     m.MelodyModel.filtering_model = property(  # type: ignore[attr-defined]
         operator.attrgetter("project.model_root.filtering_model")
