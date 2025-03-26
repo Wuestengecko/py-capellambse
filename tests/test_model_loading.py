@@ -6,8 +6,6 @@ from __future__ import annotations
 import base64
 import os
 import pathlib
-import re
-import shutil
 import subprocess
 import sys
 from importlib import metadata
