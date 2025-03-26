@@ -11,8 +11,10 @@ import capellambse
 from capellambse import loader
 from capellambse.extensions import pvmt
 
-TEST_ROOT = pathlib.Path(__file__).parent / "data" / "pvmt"
-MODEL_FILE = "PVMTTest.aird"
+from .conftest import Models  # type: ignore
+
+TEST_ROOT = Models.pvmt
+EXPECT_ROOT = Models.pvmt / "expected-output"
 
 
 @pytest.fixture
@@ -143,13 +145,11 @@ class TestPVMTConfiguration:
 class TestAppliedPropertyValueGroupXML:
     """Tests that rely on writing back and comparing the output XML."""
 
-    expect_root = TEST_ROOT / "expected-output"
-
     elem_uuid = "d32caffc-b9a1-448e-8e96-65a36ba06292"
 
     def compare_xml(self, model, expected_file):
-        pvmt_model_path = (TEST_ROOT / MODEL_FILE).with_suffix(".capella")
-        expected_model_path = self.expect_root / expected_file
+        pvmt_model_path = next(TEST_ROOT.glob("*.capella"))
+        expected_model_path = EXPECT_ROOT / expected_file
 
         model.save()
         actual = pvmt_model_path.read_text(encoding="utf-8")
