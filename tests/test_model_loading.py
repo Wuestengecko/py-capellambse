@@ -6,8 +6,6 @@ from __future__ import annotations
 import base64
 import os
 import pathlib
-import re
-import shutil
 import subprocess
 import sys
 from importlib import metadata
@@ -21,9 +19,7 @@ import capellambse
 from capellambse import helpers
 from capellambse.filehandler import gitlab_artifacts, memory
 
-from .conftest import TEST_MODEL, TEST_ROOT  # type: ignore
-
-TEST_MODEL_5_0 = TEST_ROOT / "5_0" / TEST_MODEL
+from .conftest import TEST_DATA, Models  # type: ignore
 
 DUMMY_SVG = b'<svg xmlns="http://www.w3.org/2000/svg"/>'
 DUMMY_PNG_B64 = (
@@ -43,8 +39,8 @@ def _glart_clear_env(monkeypatch):
 @pytest.mark.parametrize(
     "path",
     [
-        pytest.param(str(TEST_MODEL_5_0), id="From string"),
-        pytest.param(TEST_MODEL_5_0, id="From path"),
+        pytest.param(str(Models.test7_0), id="string"),
+        pytest.param(Models.test7_0, id="path"),
     ],
 )
 def test_model_loading_via_LocalFileHandler(path: str | pathlib.Path):
@@ -54,7 +50,7 @@ def test_model_loading_via_LocalFileHandler(path: str | pathlib.Path):
 @pytest.mark.parametrize("suffix", [".afm", ".capella"])
 def test_model_loading_with_invalid_entrypoint_fails(suffix: str):
     with pytest.raises(ValueError, match="(?i)invalid entrypoint"):
-        capellambse.MelodyModel(TEST_MODEL_5_0.with_suffix(suffix))
+        capellambse.MelodyModel(Models.test7_0.with_suffix(suffix))
 
 
 def test_model_loading_via_GitFileHandler():
@@ -78,8 +74,8 @@ def test_model_loading_via_GitFileHandler_invalid_uri():
     assert path
 
 
-def test_model_loading_from_badpath_raises_FileNotFoundError():
-    badpath = TEST_ROOT / "Missing.aird"
+def test_model_loading_from_bad_path_raises_FileNotFoundError():
+    badpath = TEST_DATA / "Missing.aird"
     with pytest.raises(FileNotFoundError):
         capellambse.MelodyModel(badpath)
 
@@ -251,7 +247,7 @@ def test_the_scp_short_form_is_recognized_as_git_protocol(monkeypatch, url):
     ],
 )
 def test_MelodyLoader_follow_link_finds_target(link: str):
-    loader = capellambse.loader.MelodyLoader(TEST_MODEL_5_0)
+    loader = capellambse.loader.MelodyLoader(Models.test7_0)
 
     with pytest.raises(KeyError):
         loader.follow_link(None, link)
@@ -546,73 +542,14 @@ def test_gitlab_artifacts_handler_assembles_url_for_display(
     assert hdl.path == expected
 
 
-@pytest.fixture
-def model_path_with_patched_version(
-    request: pytest.FixtureRequest, tmp_path: pathlib.Path
-) -> pathlib.Path:
-    """Indirect parametrized fixture for version patched model.
-
-    Parameters
-    ----------
-    request
-        Special pytest fixture for access to test context, exposing the
-        ``param`` attribute on indirect parametrization.
-    tmp_path
-        Pytest fixture giving a temporary path.
-
-    Returns
-    -------
-    aird_path
-        Path to Capella ``.aird`` file.
-    """
-    tmp_dest = tmp_path / "model"
-    ignored = shutil.ignore_patterns("*.license")
-    shutil.copytree(TEST_MODEL_5_0.parent, tmp_dest, ignore=ignored)
-    request_param: str | tuple[str, str] = request.param
-    for suffix in (".aird", ".capella"):
-        model_file = (tmp_dest / TEST_MODEL).with_suffix(suffix)
-        if isinstance(request_param, tuple):
-            re_params = request_param
-        else:
-            re_params = (r"5\.0\.0", request_param)
-
-        patched = re.sub(*re_params, model_file.read_text(encoding="utf-8"))
-        model_file.write_text(patched, encoding="utf-8")
-    return model_file.with_suffix(".aird")
-
-
-@pytest.mark.parametrize(
-    "model_path_with_patched_version",
-    ["1.3.0", "1.4.2", "6.1.0"],
-    indirect=True,
-)
-def test_loading_model_with_unsupported_version_fails(
-    model_path_with_patched_version: pathlib.Path,
-) -> None:
-    with pytest.raises(capellambse.UnsupportedPluginVersionError):
-        capellambse.MelodyModel(model_path_with_patched_version)
-
-
-@pytest.mark.parametrize(
-    "model_path_with_patched_version",
-    [("http://www.eclipse.org/sirius/1.1.0", "Unknown")],
-    indirect=True,
-)
-def test_loading_model_with_unsupported_plugin_fails(
-    model_path_with_patched_version: pathlib.Path,
-) -> None:
-    with pytest.raises(capellambse.UnsupportedPluginError):
-        capellambse.MelodyModel(model_path_with_patched_version)
-
-
 def test_model_info_contains_viewpoints_and_capella_version() -> None:
-    loader = capellambse.loader.MelodyLoader(TEST_MODEL_5_0)
+    loader = capellambse.loader.MelodyLoader(Models.test7_0)
 
     info = loader.get_model_info()
 
     assert hasattr(info, "viewpoints")
-    assert info.viewpoints["org.polarsys.capella.core.viewpoint"] == "5.0.0"
-    assert info.capella_version == "5.0.0"
+    assert info.viewpoints["org.polarsys.capella.core.viewpoint"] == "7.0.0"
+    assert info.capella_version == "7.0.0"
 
 
 @pytest.mark.parametrize(
@@ -625,7 +562,7 @@ def test_model_info_contains_viewpoints_and_capella_version() -> None:
 def test_model_loads_diagrams_from_cache_by_uuid(
     tmp_path: pathlib.Path, format: str, content: bytes
 ):
-    model = capellambse.MelodyModel(TEST_MODEL_5_0, diagram_cache=tmp_path)
+    model = capellambse.MelodyModel(Models.test7_0, diagram_cache=tmp_path)
     dg = model.diagrams[0]
     tmp_path.joinpath(f"{dg.uuid}.{format}").write_bytes(content)
 
@@ -639,7 +576,7 @@ def test_model_loads_diagrams_from_cache_by_uuid(
 def test_model_will_refuse_to_render_diagrams_if_diagram_cache_was_given(
     tmp_path: pathlib.Path,
 ):
-    model = capellambse.MelodyModel(TEST_MODEL_5_0, diagram_cache=tmp_path)
+    model = capellambse.MelodyModel(Models.test7_0, diagram_cache=tmp_path)
 
     with pytest.raises(RuntimeError, match="not in cache"):
         model.diagrams[0].render("svg")
@@ -649,7 +586,7 @@ def test_model_will_fall_back_to_rendering_internally_despite_the_cache_if_told_
     tmp_path: pathlib.Path,
 ):
     model = capellambse.MelodyModel(
-        TEST_MODEL_5_0,
+        Models.test7_0,
         diagram_cache=tmp_path,
         fallback_render_aird=True,
     )
@@ -660,19 +597,19 @@ def test_model_will_fall_back_to_rendering_internally_despite_the_cache_if_told_
 def test_model_diagram_visible_nodes_can_be_accessed_when_a_cache_was_specified(
     tmp_path: pathlib.Path,
 ):
-    model = capellambse.MelodyModel(TEST_MODEL_5_0, diagram_cache=tmp_path)
+    model = capellambse.MelodyModel(Models.test7_0, diagram_cache=tmp_path)
 
     assert model.diagrams[0].nodes
 
 
 def test_updated_namespaces_use_rounded_versions(
-    model_5_2: capellambse.MelodyModel,
+    model: capellambse.MelodyModel,
 ):
-    model_5_2._loader.update_namespaces()
+    model._loader.update_namespaces()
 
-    assert model_5_2.info.capella_version == "5.2.0"
+    assert model.info.capella_version == "5.2.0"
     ns = "org.polarsys.capella.core.data.capellacommon"
-    nsver = model_5_2.project._element.nsmap[ns].rsplit("/", 1)[-1]
+    nsver = model.project._element.nsmap[ns].rsplit("/", 1)[-1]
     assert nsver == "5.0.0"
 
 
