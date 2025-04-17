@@ -13,7 +13,7 @@ import re
 import typing as t
 import urllib.parse
 
-import requests
+import httpx
 import typing_extensions as te
 
 from capellambse import helpers
@@ -31,28 +31,28 @@ NOT_FOUND_CODES = (
 
 
 class DownloadStream(t.BinaryIO):
-    __stream: cabc.Iterator[bytes]
-    __buffer: memoryview
-
     def __init__(
-        self, session: requests.Session, url: str, chunk_size: int = 1024**2
+        self, client: httpx.Client, url: str, chunk_size: int = 1024**2
     ) -> None:
         LOGGER.debug("Opening HTTP download stream from %s", url)
         self.url = url
         self.chunk_size = chunk_size
+        self.__client = client
 
-        response = session.get(self.url, stream=True)
-        LOGGER.debug("Status: %d %s", response.status_code, response.reason)
-        if response.status_code in NOT_FOUND_CODES:
+        self.__stream = self.__client.stream("GET", self.url)
+        self.__response = resp = self.__stream.__enter__()
+        self.__buffer = memoryview(b"")
+
+        phrase = httpx.codes.get_reason_phrase(resp.status_code)
+        LOGGER.debug("Status: %d %s", resp.status_code, phrase)
+        if resp.status_code in NOT_FOUND_CODES:
             raise FileNotFoundError(
                 errno.ENOENT,
-                f"Got {response.status_code} {response.reason} for URL {url}",
+                f"Got {resp.status_code} {phrase} for URL {self.url}",
             )
-        response.raise_for_status()
-        self.__stream = response.iter_content(
-            self.chunk_size, decode_unicode=False
-        )
-        self.__buffer = memoryview(b"")
+        resp.raise_for_status()
+
+        self.__iterator = resp.iter_bytes(self.chunk_size)
 
     def __enter__(self) -> DownloadStream:
         return self
@@ -62,11 +62,11 @@ class DownloadStream(t.BinaryIO):
 
     def read(self, n: int = -1) -> bytes:
         if n == -1:
-            return b"".join(itertools.chain((self.__buffer,), self.__stream))
+            return b"".join(itertools.chain((self.__buffer,), self.__iterator))
 
         if not self.__buffer:
             try:
-                self.__buffer = memoryview(next(self.__stream))
+                self.__buffer = memoryview(next(self.__iterator))
             except StopIteration:
                 return b""
 
@@ -87,6 +87,7 @@ class DownloadStream(t.BinaryIO):
     def close(self) -> None:
         del self.__stream
         del self.__buffer
+        self.__stream.__exit__(None, None, None)
 
 
 class HTTPFileHandler(abc.FileHandler):
@@ -171,10 +172,11 @@ class HTTPFileHandler(abc.FileHandler):
 
         super().__init__(path, subdir=subdir)
 
-        self.session = requests.Session()
-        self.session.headers.update(headers or {})
         if username and password:
-            self.session.auth = (username, password)
+            auth = (username, password)
+        else:
+            auth = None
+        self.client = httpx.Client(auth=auth, headers=headers)
 
     def open(
         self,
@@ -198,7 +200,7 @@ class HTTPFileHandler(abc.FileHandler):
         url = re.sub("%[%a-z]", lambda m: replace[m.group(0)], self.path)
         assert url != self.path
         return DownloadStream(  # type: ignore[abstract] # false-positive
-            self.session, url
+            self.client, url
         )
 
     def write_transaction(self, **kw: t.Any) -> t.NoReturn:
