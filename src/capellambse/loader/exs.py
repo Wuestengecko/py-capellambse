@@ -23,21 +23,7 @@ import warnings
 
 import lxml.etree
 
-try:
-    from capellambse._compiled import serialize as _native_serialize
-except ImportError:
-    if (
-        os.environ.get("CIBUILDWHEEL", "0") == "1"
-        or os.environ.get("CAPELLAMBSE_REQUIRE_NATIVE", "0") == "1"
-    ):
-        raise
-
-    def _native_serialize(*_1, **_2):  # type: ignore[misc]
-        raise TypeError("Native module is not available")
-
-    HAS_NATIVE = False
-else:
-    HAS_NATIVE = True
+from capellambse._compiled import serialize as _native_serialize
 
 _UnspecifiedType = t.NewType("_UnspecifiedType", object)
 _NOT_SPECIFIED = _UnspecifiedType(object())
@@ -269,7 +255,7 @@ def serialize(
     assert isinstance(encoding, str)
     assert isinstance(errors, str)
 
-    if HAS_NATIVE and encoding == "utf-8" and errors == "strict":
+    if encoding == "utf-8" and errors == "strict":
         line_length = min(line_length, sys.maxsize)
         return _native_serialize(
             root, line_length=int(line_length), siblings=siblings, file=file
@@ -596,3 +582,15 @@ def _unmap_namespace(nsmap: cabc.Mapping[str, str], name: str) -> str:
     assert tag
 
     return "".join((ns, ns and ":", tag))
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name):
+        if name == "HAS_NATIVE":
+            warnings.warn(
+                "The native module is now required and always available",
+                stacklevel=2,
+            )
+            return True
+        raise AttributeError(name)

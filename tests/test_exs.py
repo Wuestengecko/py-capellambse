@@ -22,9 +22,6 @@ SERIALIZERS = [
             file=None,
         ),
         id="native",
-        marks=pytest.mark.skipif(
-            not exs.HAS_NATIVE, reason="native module not available"
-        ),
     ),
     pytest.param(
         functools.partial(
