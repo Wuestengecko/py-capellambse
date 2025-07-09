@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import functools
 import os
 import sys
 
@@ -13,36 +12,7 @@ from capellambse.loader import exs
 
 LF = os.linesep
 
-SERIALIZERS = [
-    pytest.param(
-        functools.partial(
-            exs._native_serialize,
-            line_length=sys.maxsize,
-            siblings=True,
-            declare_encoding=False,
-            file=None,
-        ),
-        id="native",
-        marks=pytest.mark.skipif(
-            not exs.HAS_NATIVE, reason="native module not available"
-        ),
-    ),
-    pytest.param(
-        functools.partial(
-            exs._python_serialize,
-            encoding="utf-8",
-            errors="strict",
-            line_length=sys.maxsize,
-            siblings=True,
-            declare_encoding=False,
-            file=None,
-        ),
-        id="python",
-    ),
-]
 
-
-@pytest.mark.parametrize("serializer", SERIALIZERS)
 @pytest.mark.parametrize(
     "string",
     [
@@ -60,10 +30,10 @@ SERIALIZERS = [
         ),
     ],
 )
-def test_escaping(serializer: functools.partial[bytes], string: str) -> None:
+def test_escaping(string: str) -> None:
     tree = etree.fromstring(string)
     expected = string.encode("utf-8")
 
-    actual = serializer(tree)
+    actual = exs.serialize(tree, line_length=sys.maxsize, siblings=True)
 
     assert actual == expected
