@@ -89,7 +89,9 @@ class ReqIFElement(IdentifiableElement, abstract=True):
         return f"<{mytype} {name!r} ({self.uuid})>"
 
     def _short_html_(self) -> markupsafe.Markup:
-        name = self.name or self.long_name
+        name = self.long_name
+        if isinstance(self, SharedDirectAttributes):
+            name = self.name or name
         return helpers.make_short_html(type(self).__name__, self.uuid, name)
 
 
