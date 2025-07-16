@@ -353,7 +353,6 @@ where = ["src"]
 
 [[tool.setuptools-rust.ext-modules]]
 target = "capellambse._compiled"
-optional = true
 
 [tool.setuptools_scm]
 # This section must exist for setuptools_scm to work

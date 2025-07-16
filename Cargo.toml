@@ -7,6 +7,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+capellambse_macros = { version = "0.1.0", path = "src/rustmacros" }
 pyo3 = { version = "0.24.0", features = ["abi3-py310", "extension-module"] }
 
 [lib]
