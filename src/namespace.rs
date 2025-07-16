@@ -242,6 +242,13 @@ impl Namespace {
     }
 }
 
+impl Namespace {
+    pub fn find<'py>(py: Python<'py>, name: &str) -> PyResult<Bound<'py, Self>> {
+        let ns = getfunc(intern!(py, "find_namespace")).call1((name,))?;
+        Ok(ns.downcast_into()?)
+    }
+}
+
 fn getfunc<'py>(name: &Bound<'py, PyString>) -> Bound<'py, PyAny> {
     let py = name.py();
     py.import(intern!(py, "capellambse.model"))
