@@ -18,6 +18,7 @@ import capellambse
 import capellambse.helpers
 from capellambse import _diagram_cache, aird, filehandler, loader
 
+from .. import _compiled
 from . import _descriptors, _obj, diagram
 
 # `pathlib` is referenced by the `dataclasses` auto-generated init.
@@ -171,7 +172,7 @@ class MelodyModel:
             | None
         ) = None,
         fallback_render_aird: bool = False,
-        loader_backend: t.Literal["lxml"] = "lxml",
+        loader_backend: t.Literal["lxml", "native"] = "lxml",
         **kwargs: t.Any,
     ) -> None:
         """Load a project.
@@ -310,6 +311,8 @@ class MelodyModel:
 
         if loader_backend == "lxml":
             self._loader: loader.Loader = loader.MelodyLoader(path, **kwargs)
+        elif loader_backend == "native":
+            self._loader = _compiled.NativeLoader(path, **kwargs)
         else:
             raise ValueError(
                 f"Unsupported loader backend {loader_backend!r},"

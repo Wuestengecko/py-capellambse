@@ -51,6 +51,9 @@ from lxml import etree
 
 import capellambse
 from capellambse import helpers, loader
+from capellambse._compiled import Association as _AssociationImpl
+from capellambse._compiled import Backref as _BackrefImpl
+from capellambse._compiled import Containment as _ContainmentImpl
 
 from . import T, T_co, U, U_co
 
@@ -767,6 +770,11 @@ class WritableAccessor(
         /,
         **kw: t.Any,
     ) -> T_co:
+        if not isinstance(parent._model._loader, loader.MelodyLoader):
+            raise TypeError(
+                f"{type(self).__name__} only supports the legacy 'lxml' backend"
+            )
+
         if typehint:
             elmclass, _ = self._match_xtype(typehint)
         else:
@@ -1198,6 +1206,11 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     def _resolve(
         self, obj: _obj.ModelObject, elem: etree._Element
     ) -> etree._Element:
+        if not isinstance(obj._model._loader, loader.MelodyLoader):
+            raise TypeError(
+                f"{type(self).__name__} only supports the legacy 'lxml' backend"
+            )
+
         if self.follow_abstract:
             if abstype := elem.get("abstractType"):
                 elem = obj._model._loader.follow_link(elem, abstype)
@@ -1249,6 +1262,11 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         index: int,
         value: _obj.ModelObject | NewObject,
     ) -> None:
+        if not isinstance(elmlist._model._loader, loader.MelodyLoader):
+            raise TypeError(
+                f"{type(self).__name__} only supports the legacy 'lxml' backend"
+            )
+
         if isinstance(value, NewObject):
             raise NotImplementedError(
                 "Creating new objects in lists with new_object() is not"
@@ -1879,7 +1897,7 @@ class Allocation(Relationship[T_co]):
 class Association(Relationship[T_co]):
     """Provides access to elements that are linked in an attribute."""
 
-    __slots__ = ("attr", "class_")
+    __slots__ = ("__impl", "attr", "class_")
 
     def __init__(
         self,
@@ -1974,6 +1992,19 @@ class Association(Relationship[T_co]):
                     f"Invalid class without namespace: {class_!r}"
                 ) from None
             class_ = (ns, class_.__name__)
+
+        object.__setattr__(
+            self,
+            "__impl",
+            _AssociationImpl(
+                class_,
+                attr,
+                mapkey=mapkey,
+                mapvalue=mapvalue,
+                fixed_length=fixed_length,
+            ),
+        )
+
         self.class_ = _obj.resolve_class_name(class_)
         self.attr = attr
 
@@ -1991,6 +2022,10 @@ class Association(Relationship[T_co]):
         del objtype
         if obj is None:  # pragma: no cover
             return self
+
+        if not isinstance(obj._model._loader, loader.MelodyLoader):
+            impl = object.__getattribute__(self, "__impl")
+            return impl.__get__(obj, type(obj))
 
         if self.attr is None:
             raise RuntimeError(
@@ -2024,6 +2059,11 @@ class Association(Relationship[T_co]):
             )
             value = (value,)
 
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            impl.__set__(obj, value)
+            return
+
         te.assert_type(value, cabc.Iterable[T_co | NewObject])
         if any(isinstance(i, NewObject) for i in value):
             raise TypeError("Cannot create new objects on an Association")
@@ -2044,7 +2084,17 @@ class Association(Relationship[T_co]):
                 " make sure that __set_name__ gets called"
             )
 
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            impl.__delete__(obj)
+            return
+
         del obj._element.attrib[self.attr]
+
+    def __set_name__(self, owner: type[_obj.ModelObject], name: str) -> None:
+        impl = object.__getattribute__(self, "__impl")
+        impl.__set_name__(owner, name)
+        super().__set_name__(owner, name)
 
     def __repr__(self) -> str:
         if self.attr is None:
@@ -2490,7 +2540,7 @@ class SpecificationAccessor(Accessor[_Specification]):
 class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     """Searches for references to the current element elsewhere."""
 
-    __slots__ = ("attrs", "target_classes")
+    __slots__ = ("__impl", "attrs", "target_classes")
 
     attrs: tuple[operator.attrgetter, ...]
     class_: _obj.ClassName
@@ -2588,6 +2638,18 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             if not hasattr(class_, "__capella_namespace__"):
                 raise TypeError(f"Class does not have a namespace: {class_!r}")
             self.class_ = (class_.__capella_namespace__, class_.__name__)
+
+        object.__setattr__(
+            self,
+            "__impl",
+            _BackrefImpl(
+                self.class_,
+                *attrs,
+                mapkey=mapkey,
+                mapvalue=mapvalue,
+            ),
+        )
+
         self.attrs = tuple(operator.attrgetter(i) for i in attrs)
         self.subclasses = subclasses
         self.list_extra_args = {
@@ -2611,6 +2673,10 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         if obj is None:  # pragma: no cover
             return self
 
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            return impl.__get__(obj, type(obj))
+
         matches: list[etree._Element] = []
         for candidate in obj._model.search(
             self.class_, subclasses=self.subclasses
@@ -2628,6 +2694,29 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         return _obj.ElementList(
             obj._model, matches, None, **self.list_extra_args
         )
+
+    def __set__(
+        self,
+        obj: _obj.ModelObject,
+        value: T_co | NewObject | cabc.Iterable[T_co | NewObject],
+    ) -> None:
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            impl.__set__(obj, value)
+            return
+        super().__set__(obj, value)
+
+    def __delete__(self, obj: _obj.ModelObject) -> None:
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            impl.__delete__(obj)
+            return
+        super().__delete__(obj)
+
+    def __set_name__(self, owner: type[_obj.ModelObject], name: str) -> None:
+        impl = object.__getattribute__(self, "__impl")
+        impl.__set_name__(owner, name)
+        super().__set_name__(owner, name)
 
     def __repr__(self) -> str:
         try:
@@ -2962,7 +3051,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
 
 
 class Containment(Relationship[T_co]):
-    __slots__ = ("classes", "role_tag")
+    __slots__ = ("__impl", "classes", "role_tag")
 
     aslist: type[_obj.ElementListCouplingMixin]
     alternate: type[_obj.ModelObject] | None
@@ -3073,10 +3162,29 @@ class Containment(Relationship[T_co]):
                 DeprecationWarning,
                 stacklevel=2,
             )
+            self.class_ = (class_.__capella_namespace__, class_.__name__)
         else:
             raise TypeError(
                 f"Invalid class_ specified, expected a 2-tuple: {class_!r}"
             )
+
+        object.__setattr__(
+            self,
+            "__impl",
+            _ContainmentImpl(
+                role_tag,
+                self.class_,
+                mapkey=mapkey,
+                mapvalue=mapvalue,
+                alternate=t.cast(
+                    type[_obj.ModelElement] | None,
+                    te.assert_type(alternate, type[_obj.ModelObject] | None),
+                ),
+                single_attr=single_attr,
+                fixed_length=fixed_length,
+                type_hint_map=type_hint_map,
+            ),
+        )
 
     @t.overload
     def __get__(self, obj: None, objtype: type[t.Any]) -> te.Self: ...
@@ -3092,6 +3200,10 @@ class Containment(Relationship[T_co]):
         del objtype
         if obj is None:  # pragma: no cover
             return self
+
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            return impl.__get__(obj, type(obj))
 
         if self.role_tag is None:
             raise RuntimeError(
@@ -3127,6 +3239,11 @@ class Containment(Relationship[T_co]):
             )
             value = (value,)
 
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            impl.__set__(obj, value)
+            return
+
         current = self.__get__(obj)
         previous = {id(i): i for i in current}
 
@@ -3136,6 +3253,18 @@ class Containment(Relationship[T_co]):
                 previous.pop(id(i._element), None)
         for i in previous.values():
             current.remove(i)
+
+    def __delete__(self, obj: _obj.ModelObject) -> None:
+        if not isinstance(obj._model, capellambse.MelodyModel):
+            impl = object.__getattribute__(self, "__impl")
+            impl.__delete__(obj)
+            return
+        super().__delete__(obj)
+
+    def __set_name__(self, owner: type[_obj.ModelObject], name: str) -> None:
+        impl = object.__getattribute__(self, "__impl")
+        impl.__set_name__(owner, name)
+        super().__set_name__(owner, name)
 
     def __repr__(self) -> str:
         return (

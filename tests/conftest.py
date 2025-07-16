@@ -13,7 +13,10 @@ import capellambse
 
 INSTALLED_PACKAGE = pathlib.Path(capellambse.__file__).parent
 TEST_DATA = pathlib.Path(__file__).parent / "data"
-MODEL_PARAMS = (pytest.param({"loader_backend": "lxml"}, id="lxml-loader"),)
+MODEL_PARAMS = (
+    pytest.param({"loader_backend": "lxml"}, id="lxml-loader"),
+    pytest.param({"loader_backend": "native"}, id="native-loader"),
+)
 
 capellambse.load_model_extensions()
 
