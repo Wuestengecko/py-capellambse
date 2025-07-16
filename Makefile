@@ -47,7 +47,7 @@ dist-clean: clean docs-clean #: Clean all build artifacts, tools and data
 
 .PHONY: test
 test: .venv #: Run unit tests
-	uv run --no-sync pytest -n auto
+	uv run --no-sync pytest -n auto $(PYTESTOPTS)
 
 .PHONY: coverage
 coverage: .venv #: Run unit tests with coverage reporting
