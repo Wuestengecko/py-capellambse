@@ -27,10 +27,8 @@ __all__ = [
 ]
 
 import abc
-import collections
 import collections.abc as cabc
 import contextlib
-import dataclasses
 import functools
 import importlib
 import importlib.metadata as imm
@@ -50,6 +48,7 @@ from lxml import etree
 
 import capellambse
 from capellambse import helpers
+from capellambse._compiled import Namespace
 
 from . import VIRTUAL_NAMESPACE_PREFIX, T, U, _descriptors, _pods, _styleclass
 
@@ -152,196 +151,6 @@ class MultipleMatchesError(KeyError):
     def filter(self) -> t.Any:
         """The key that was used for filtering."""
         return self.args[0]
-
-
-@dataclasses.dataclass(init=False, frozen=True)
-class Namespace:
-    """The interface between the model and a namespace containing classes.
-
-    Instances of this class represent the different namespaces used to
-    organize types of Capella model objects. They are also the entry
-    point into the namespace when a loaded model has to interact with
-    it, e.g. for looking up a class to load or create.
-
-    For a more higher-level overview of the interactions, and how to
-    make use of this and related classes, read the documentation on
-    `Extending the metamodel <_model-extensions>`__.
-
-    Parameters
-    ----------
-    uri
-        The URI of the namespace. This is used to identify the
-        namespace in the XML files. It usually looks like a URL, but
-        does not have to be one.
-    alias
-        The preferred alias of the namespace. This is the type name
-        prefix used in an XML file.
-
-        If the preferred alias is not available because another
-        namespace already uses it, a numeric suffix will be appended
-        to the alias to make it unique.
-    maxver
-        The maximum version of the namespace that is supported by this
-        implementation. If a model uses a higher version, it cannot be
-        loaded and an exception will be raised.
-    """
-
-    uri: str
-    alias: str
-    viewpoint: str | None
-    maxver: av.AwesomeVersion | None
-    version_precision: int
-    """Number of significant parts in the version number for namespaces.
-
-    When qualifying a versioned namespace based on the model's activated
-    viewpoint, only use this many components for the namespace URL.
-    Components after that are set to zero.
-
-    Example: A viewpoint version of "1.2.3" with a version precision of
-    2 will result in the namespace version "1.2.0".
-    """
-
-    def __init__(
-        self,
-        uri: str,
-        alias: str,
-        viewpoint: str | None = None,
-        maxver: str | None = None,
-        *,
-        version_precision: int = 1,
-    ) -> None:
-        if version_precision <= 0:
-            raise ValueError("Version precision cannot be negative")
-
-        object.__setattr__(self, "uri", uri)
-        object.__setattr__(self, "alias", alias)
-        object.__setattr__(self, "viewpoint", viewpoint)
-        object.__setattr__(self, "version_precision", version_precision)
-
-        is_versioned = "{VERSION}" in uri
-        if is_versioned and maxver is None:
-            raise TypeError(
-                "Versioned namespaces must declare their supported 'maxver'"
-            )
-        if not is_versioned and maxver is not None:
-            raise TypeError(
-                "Unversioned namespaces cannot declare a supported 'maxver'"
-            )
-
-        if maxver is not None:
-            maxver = av.AwesomeVersion(maxver)
-            object.__setattr__(self, "maxver", maxver)
-        else:
-            object.__setattr__(self, "maxver", None)
-
-        ClassTuple: te.TypeAlias = """tuple[
-            type[ModelObject],
-            av.AwesomeVersion,
-            av.AwesomeVersion | None,
-        ]"""
-        self._classes: dict[str, list[ClassTuple]]
-        object.__setattr__(self, "_classes", collections.defaultdict(list))
-
-    def match_uri(self, uri: str) -> bool | av.AwesomeVersion | None:
-        """Match a (potentially versioned) URI against this namespace.
-
-        The return type depends on whether this namespace is versioned.
-
-        Unversioned Namespaces return a simple boolean flag indicating
-        whether the URI exactly matches this Namespace.
-
-        Versioned Namespaces return one of:
-
-        - ``False``, if the URI did not match
-        - ``None``, if the URI did match, but the version field was
-          empty or the literal ``{VERSION}`` placeholder
-        - Otherwise, an :class:~`awesomeversion.AwesomeVersion` object
-          with the version number contained in the URL
-
-        Values other than True and False can then be passed on to
-        :meth:`get_class`, to obtain a class object appropriate for the
-        namespace and version described by the URI.
-        """
-        if "{VERSION}" not in self.uri:
-            return uri == self.uri
-
-        prefix, _, suffix = self.uri.partition("{VERSION}")
-        if (
-            len(uri) >= len(prefix) + len(suffix)
-            and uri.startswith(prefix)
-            and uri.endswith(suffix)
-        ):
-            v = uri[len(prefix) : -len(suffix) or None]
-            if "/" in v:
-                return False
-            if v in ("", "{VERSION}"):
-                return None
-            return self.trim_version(v)
-
-        return False
-
-    def get_class(
-        self, clsname: str, version: str | None = None
-    ) -> type[ModelObject]:
-        if "{VERSION}" in self.uri and not version:
-            raise TypeError(
-                f"Versioned namespace, but no version requested: {self.uri}"
-            )
-
-        classes = self._classes.get(clsname)
-        if not classes:
-            raise MissingClassError(self, version, clsname)
-
-        eligible: list[tuple[av.AwesomeVersion, type[ModelObject]]] = []
-        for cls, minver, maxver in classes:
-            if version and (version < minver or (maxver and version > maxver)):
-                continue
-            eligible.append((minver, cls))
-
-        if not eligible:
-            raise MissingClassError(self, version, clsname)
-        eligible.sort(key=lambda i: i[0], reverse=True)
-        return eligible[0][1]
-
-    def register(
-        self,
-        cls: type[ModelObject],
-        minver: str | None,
-        maxver: str | None,
-    ) -> None:
-        if cls.__capella_namespace__ is not self:
-            raise ValueError(
-                f"Cannot register class {cls.__name__!r}"
-                f" in Namespace {self.uri!r},"
-                f" because it belongs to {cls.__capella_namespace__.uri!r}"
-            )
-
-        classes = self._classes[cls.__name__]
-        if minver is not None:
-            minver = av.AwesomeVersion(minver)
-        else:
-            minver = av.AwesomeVersion(0)
-        if maxver is not None:
-            maxver = av.AwesomeVersion(maxver)
-        classes.append((cls, minver, maxver))
-
-    def trim_version(
-        self, version: str | av.AwesomeVersion, /
-    ) -> av.AwesomeVersion:
-        assert self.version_precision > 0
-        pos = dots = 0
-        while pos < len(version) and dots < self.version_precision:
-            dot = version.find(".", pos)
-            if dot < 0:
-                return av.AwesomeVersion(version)
-            pos = dot + 1
-            dots += 1
-        trimmed = version[:pos] + re.sub(r"[^.]+", "0", version[pos:])
-        return av.AwesomeVersion(trimmed)
-
-    def __contains__(self, clsname: str) -> bool:
-        """Return whether this Namespace has a class with the given name."""
-        return clsname in self._classes
 
 
 NS = Namespace(
