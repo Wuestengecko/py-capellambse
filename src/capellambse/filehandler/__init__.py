@@ -17,6 +17,7 @@ import sys
 import typing as t
 from importlib import metadata
 
+from .. import helpers
 from .abc import *
 
 LOGGER = logging.getLogger(__name__)
@@ -94,3 +95,39 @@ def get_filehandler(path: str | os.PathLike, **kwargs: t.Any) -> FileHandler:
     handler_name, path = split_protocol(path)
     handler = load_entrypoint(handler_name)
     return handler(path, **kwargs)
+
+
+def derive_entrypoint(
+    path: str | os.PathLike | FileHandler,
+    entrypoint: str | pathlib.PurePosixPath | None = None,
+    **kwargs: t.Any,
+) -> tuple[FileHandler, pathlib.PurePosixPath]:
+    if entrypoint:
+        if not isinstance(path, FileHandler):
+            path = get_filehandler(path, **kwargs)
+        entrypoint = helpers.normalize_pure_path(entrypoint)
+        return path, entrypoint
+
+    if not isinstance(path, FileHandler):
+        path = os.fspath(path)
+        protocol, nested_path = split_protocol(path)
+        if protocol == "file":
+            assert isinstance(nested_path, pathlib.Path)
+            if nested_path.suffix == ".aird":
+                entrypoint = pathlib.PurePosixPath(nested_path.name)
+                path = nested_path.parent
+                return get_filehandler(path, **kwargs), entrypoint
+            if nested_path.is_file():
+                raise ValueError(
+                    f"Invalid entrypoint: Not an .aird file: {nested_path}"
+                )
+        path = get_filehandler(path, **kwargs)
+
+    aird_files = [i for i in path.iterdir() if i.name.endswith(".aird")]
+    if not aird_files:
+        raise ValueError("No .aird file found, specify entrypoint")
+    if len(aird_files) > 1:
+        raise ValueError("Multiple .aird files found, specify entrypoint")
+    entrypoint = pathlib.PurePosixPath(aird_files[0])
+
+    return path, entrypoint
