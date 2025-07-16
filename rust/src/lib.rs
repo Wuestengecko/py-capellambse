@@ -4,10 +4,13 @@
 use pyo3::prelude::*;
 
 mod exs;
+mod namespace;
+mod pytypes;
 
 #[pymodule(name = "_compiled", gil_used = false)]
 fn setup_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(exs::serialize, m)?)?;
+    namespace::setup(m)?;
 
     Ok(())
 }
