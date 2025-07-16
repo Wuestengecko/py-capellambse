@@ -80,42 +80,6 @@ METADATA_TAG = f"{{{_n.NAMESPACES['metadata']}}}Metadata"
 _ROOT_NS = "org.polarsys.capella.core.data.capellamodeller"
 
 
-def _derive_entrypoint(
-    path: str | os.PathLike | filehandler.FileHandler,
-    entrypoint: str | pathlib.PurePosixPath | None = None,
-    **kwargs: t.Any,
-) -> tuple[filehandler.FileHandler, pathlib.PurePosixPath]:
-    if entrypoint:
-        if not isinstance(path, filehandler.FileHandler):
-            path = filehandler.get_filehandler(path, **kwargs)
-        entrypoint = helpers.normalize_pure_path(entrypoint)
-        return path, entrypoint
-
-    if not isinstance(path, filehandler.FileHandler):
-        path = os.fspath(path)
-        protocol, nested_path = filehandler.split_protocol(path)
-        if protocol == "file":
-            assert isinstance(nested_path, pathlib.Path)
-            if nested_path.suffix == ".aird":
-                entrypoint = pathlib.PurePosixPath(nested_path.name)
-                path = nested_path.parent
-                return filehandler.get_filehandler(path, **kwargs), entrypoint
-            if nested_path.is_file():
-                raise ValueError(
-                    f"Invalid entrypoint: Not an .aird file: {nested_path}"
-                )
-        path = filehandler.get_filehandler(path, **kwargs)
-
-    aird_files = [i for i in path.iterdir() if i.name.endswith(".aird")]
-    if not aird_files:
-        raise ValueError("No .aird file found, specify entrypoint")
-    if len(aird_files) > 1:
-        raise ValueError("Multiple .aird files found, specify entrypoint")
-    entrypoint = pathlib.PurePosixPath(aird_files[0])
-
-    return path, entrypoint
-
-
 def _find_refs(root: etree._Element) -> cabc.Iterable[str]:
     return itertools.chain(
         (x.split("#")[0] for x in root.xpath(".//referencedAnalysis/@href")),
@@ -527,7 +491,7 @@ class MelodyLoader:
         )
         self.__may_be_corrupt = False
 
-        handler, self.entrypoint = _derive_entrypoint(
+        handler, self.entrypoint = filehandler.derive_entrypoint(
             path, entrypoint, **kwargs
         )
         if self.entrypoint.suffix != ".aird":

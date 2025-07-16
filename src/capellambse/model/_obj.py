@@ -382,6 +382,8 @@ class ModelElement(metaclass=_ModelElementMeta):
     __capella_namespace__: t.ClassVar[Namespace]
     __capella_abstract__: t.ClassVar[bool]
 
+    __data: object
+
     uuid = _pods.StringPOD("id", writable=False)
     """The universally unique identifier of this object.
 

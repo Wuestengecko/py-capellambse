@@ -15,9 +15,10 @@ import typing as t
 from capellambse import filehandler
 
 if t.TYPE_CHECKING:
+    from .. import _compiled
     from . import core
 
-Loader: t.TypeAlias = "core.MelodyLoader"
+Loader: t.TypeAlias = "core.MelodyLoader | _compiled.NativeLoader"
 
 
 class FragmentType(enum.Enum):
