@@ -199,4 +199,4 @@ if not t.TYPE_CHECKING:
                 ]
             }
 
-        raise AttributeError(f"{__name__} has no attribute {attr}")
+        raise AttributeError(f"{__name__} has no attribute {attr}")  # noqa: TRY003

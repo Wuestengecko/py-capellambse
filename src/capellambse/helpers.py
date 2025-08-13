@@ -474,11 +474,11 @@ def ssvparse(
         the expected number of values doesn't match the actual number.
     """
     if not string.startswith(parens[0]) or not string.endswith(parens[1]):
-        raise ValueError(f"Missing {parens} around string: {string}")
+        raise ValueError(f"Missing {parens} around string: {string}")  # noqa: TRY003
     string = string[len(parens[0]) : -len(parens[1])]
     values = [cast(v) for v in string.split(sep)]
     if num and len(values) != num:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             f"Expected {num} values, found {len(values)}: {string}"
         )
     return values
@@ -562,18 +562,18 @@ def get_term_cell_size(stream: t.IO[str] | None = None) -> tuple[int, int]:
     """
     if stream is None:
         if not sys.stderr.isatty():
-            raise ValueError("No stream given and stderr is not a TTY")
+            raise ValueError("No stream given and stderr is not a TTY")  # noqa: TRY003
         stream = sys.stderr
     elif not stream.isatty():
-        raise ValueError("Passed stream is not a TTY")
+        raise ValueError("Passed stream is not a TTY")  # noqa: TRY003
 
     if sys.platform.startswith("win"):
-        raise ValueError("Not supported on Windows")
+        raise ValueError("Not supported on Windows")  # noqa: TRY003
 
     buf = array.array("H", [0, 0, 0, 0])
     fcntl.ioctl(stream, termios.TIOCGWINSZ, buf)
     if 0 in buf:
-        raise ValueError(f"Received invalid ioctl reply: {buf!r}")
+        raise ValueError(f"Received invalid ioctl reply: {buf!r}")  # noqa: TRY003
     rows, cols, screenwidth, screenheight = buf
     return (screenwidth // cols, screenheight // rows)
 
@@ -907,9 +907,9 @@ def escape_linked_text(
                 yield html.escape(href[len("hlink://") :])
                 yield '"/>'
             if len(elm) > 0:
-                raise ValueError("Nesting is not allowed in LinkedText")
+                raise ValueError("Nesting is not allowed in LinkedText")  # noqa: TRY003
         else:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Only 'a' tags are allowed in LinkedText, not {elm.tag!r}"
             )
 
@@ -942,15 +942,15 @@ def split_links(links: str) -> cabc.Iterator[str]:
                 part = f"{next_xtype} {part}"
                 next_xtype = ""
             if not CROSS_FRAGMENT_LINK.fullmatch(part):
-                raise ValueError(f"Malformed link definition: {links}")
+                raise ValueError(f"Malformed link definition: {links}")  # noqa: TRY003
             yield part
 
         else:
             if next_xtype:
-                raise ValueError(f"Malformed link definition: {links}")
+                raise ValueError(f"Malformed link definition: {links}")  # noqa: TRY003
             next_xtype = part
     if next_xtype:
-        raise ValueError(f"Malformed link definition: {links}")
+        raise ValueError(f"Malformed link definition: {links}")  # noqa: TRY003
 
 
 @t.overload

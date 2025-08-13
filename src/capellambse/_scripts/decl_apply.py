@@ -14,6 +14,7 @@ from capellambse import decl
 @click.option("-s", "--strict/--relaxed", is_flag=True, default=False)
 @click.argument("file", type=click.File("r"))
 def main(
+    *,
     model: capellambse.MelodyModel,
     file: t.IO[str],
     strict: bool,

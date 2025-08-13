@@ -61,7 +61,7 @@ class RGB(t.NamedTuple):
             return cls.fromcsv(cssstring[cssstring.find("(") : -1])
         if cssstring.startswith("#"):
             return cls.fromhex(cssstring[1:])
-        raise ValueError(f"Bad CSS color: {cssstring!r}")
+        raise ValueError(f"Bad CSS color: {cssstring!r}")  # noqa: TRY003
 
     @classmethod
     def fromcsv(cls, csvstring: str) -> RGB:
@@ -74,7 +74,7 @@ class RGB(t.NamedTuple):
         if len(split) == 3:
             r, g, b = (int(c) for c in split)
             return cls(r, g, b, alpha)
-        raise ValueError(f"Expected 3 or 4 values: {csvstring}")
+        raise ValueError(f"Expected 3 or 4 values: {csvstring}")  # noqa: TRY003
 
     @classmethod
     def fromhex(cls, hexstring: str) -> RGB:
@@ -108,7 +108,7 @@ class RGB(t.NamedTuple):
             )
             return cls(r, g, b, alpha)
 
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "Invalid length of hex string, expected 3, 4, 6 or 8 characters"
         )
 
@@ -142,7 +142,7 @@ def get_style(diagramclass: str | None, objectclass: str) -> dict[str, t.Any]:
         known style class.
     """
     if "." not in objectclass:
-        raise ValueError(f"Malformed objectclass: {objectclass}")
+        raise ValueError(f"Malformed objectclass: {objectclass}")  # noqa: TRY003
 
     if "symbol" in objectclass.lower():
         return {}

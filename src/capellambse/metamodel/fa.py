@@ -26,7 +26,7 @@ class _AbstractExchange(m.ModelElement):
 
         @property
         def source(self) -> m.ModelElement:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "AbstractExchange is deprecated and will be removed soon,"
                 " use the concrete FunctionalExchange or ComponentExchange"
                 " class or another common superclass instead"
@@ -34,7 +34,7 @@ class _AbstractExchange(m.ModelElement):
 
         @property
         def target(self) -> m.ModelElement:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "AbstractExchange is deprecated and will be removed soon,"
                 " use the concrete FunctionalExchange or ComponentExchange"
                 " class or another common superclass instead"
@@ -784,7 +784,7 @@ if not t.TYPE_CHECKING:
             )
             return AbstractFunction
 
-        raise AttributeError(f"{__name__} has no attribute {attr}")
+        raise AttributeError(f"{__name__} has no attribute {attr}")  # noqa: TRY003
 
 
 from . import capellacommon, cs, interaction  # noqa: F401

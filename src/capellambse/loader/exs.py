@@ -33,7 +33,7 @@ except ImportError:
         raise
 
     def _native_serialize(*_1, **_2):  # type: ignore[misc, no-untyped-def]
-        raise TypeError("Native module is not available")
+        raise TypeError("Native module is not available")  # noqa: TRY003
 
     HAS_NATIVE = False
 else:
@@ -589,7 +589,7 @@ def _unmap_namespace(nsmap: cabc.Mapping[str, str], name: str) -> str:
         try:
             ns = nsmap[ns]
         except KeyError:
-            raise ValueError(f"Namespace not found: {ns!r}") from None
+            raise ValueError(f"Namespace not found: {ns!r}") from None  # noqa: TRY003
         assert ns
 
     tag = match.group(2)
