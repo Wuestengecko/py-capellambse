@@ -13,10 +13,11 @@ from . import _scripts
 
 class LazyGroup(click.Group):
     def list_commands(self, ctx):
-        cmds: list[str] = []
-        for i in imr.files(_scripts).iterdir():
-            if i.name.endswith(".py") and not i.name.startswith("_"):
-                cmds.append(i.name.removesuffix(".py").replace("_", "-"))
+        cmds: list[str] = [
+            i.name.removesuffix(".py").replace("_", "-")
+            for i in imr.files(_scripts).iterdir()
+            if i.name.endswith(".py") and not i.name.startswith("_")
+        ]
         cmds.sort()
         return super().list_commands(ctx) + cmds
 

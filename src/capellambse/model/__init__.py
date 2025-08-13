@@ -4,12 +4,14 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import enum
 import functools
 import sys
 import typing as t
 import warnings
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -199,4 +201,4 @@ if not t.TYPE_CHECKING:
                 ]
             }
 
-        raise AttributeError(f"{__name__} has no attribute {attr}")
+        raise AttributeError(f"{__name__} has no attribute {attr}")  # noqa: TRY003

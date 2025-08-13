@@ -82,17 +82,17 @@ class OperationalAnalysis(cs.BlockArchitecture):
     def root_activity(self) -> OperationalActivity:
         pkg = self.activity_pkg
         if pkg is None:
-            raise m.BrokenModelError(
+            raise m.BrokenModelError(  # noqa: TRY003
                 "OperationalAnalysis has no root ActivityPkg"
             )
         assert isinstance(pkg, OperationalActivityPkg)
         candidates = pkg.activities
         if len(candidates) < 1:
-            raise m.BrokenModelError(
+            raise m.BrokenModelError(  # noqa: TRY003
                 "ActivityPkg does not contain any Activities"
             )
         if len(candidates) > 1:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 "Expected 1 object for OperationalAnalysis.root_activity,"
                 f" got {len(candidates)}"
             )
@@ -109,14 +109,14 @@ class OperationalAnalysis(cs.BlockArchitecture):
     def root_entity(self) -> Entity:
         pkg = self.entity_pkg
         if pkg is None:
-            raise m.BrokenModelError(
+            raise m.BrokenModelError(  # noqa: TRY003
                 "OperationalAnalysis has no root EntityPkg"
             )
         candidates = pkg.entities
         if len(candidates) < 1:
-            raise m.BrokenModelError("Root EntityPkg is empty")
+            raise m.BrokenModelError("Root EntityPkg is empty")  # noqa: TRY003
         if len(candidates) > 1:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 "Expected 1 object for OperationalAnalysis.root_entity,"
                 f" got {len(candidates)}"
             )

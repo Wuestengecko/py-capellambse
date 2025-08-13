@@ -47,12 +47,14 @@ import warnings
 
 import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 import capellambse
 from capellambse import helpers
 
 from . import T, T_co, U, U_co
+
+if t.TYPE_CHECKING:
+    from lxml import etree
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -86,7 +88,7 @@ def xtype_handler(
 def build_xtype(class_: type[_obj.ModelObject]) -> str:
     ns: _obj.Namespace | None = getattr(class_, "__capella_namespace__", None)
     if ns is None:
-        raise ValueError(f"Cannot determine namespace of class {class_!r}")
+        raise ValueError(f"Cannot determine namespace of class {class_!r}")  # noqa: TRY003
     return f"{ns.alias}:{class_.__name__}"
 
 
@@ -148,6 +150,21 @@ class NewObject:
         kw = ", ".join(f"{k}={v!r}" for k, v in self._kw.items())
         return f"<new object {self._type_hint!r} ({kw})>"
 
+    def asdict(self) -> dict[str, t.Any]:
+        attrs = dict(self._kw)
+        if self._type_hint:
+            attrs["_type"] = self._type_hint
+        return attrs
+
+    @classmethod
+    def fromdict(cls, data: cabc.Mapping[str, t.Any]) -> te.Self:
+        data = dict(data)
+        try:
+            _type = data.pop("_type")
+        except KeyError:
+            raise ValueError("NewObject dict requires a _type key") from None  # noqa: TRY003
+        return cls(_type, **data)
+
 
 class Accessor(t.Generic[U_co], metaclass=abc.ABCMeta):
     """Super class for all Accessor types."""
@@ -177,10 +194,10 @@ class Accessor(t.Generic[U_co], metaclass=abc.ABCMeta):
         pass
 
     def __set__(self, obj: t.Any, value: t.Any) -> None:
-        raise TypeError(f"Cannot set {self} on {type(obj).__name__}")
+        raise TypeError(f"Cannot set {self} on {type(obj).__name__}")  # noqa: TRY003
 
     def __delete__(self, obj: t.Any) -> None:
-        raise TypeError(f"Cannot delete from {self!r} on {type(obj).__name__}")
+        raise TypeError(f"Cannot delete from {self!r} on {type(obj).__name__}")  # noqa: TRY003
 
     def __set_name__(self, owner: type[t.Any], name: str) -> None:
         self.__objclass__ = owner
@@ -236,7 +253,7 @@ class Alias(Accessor["U"], t.Generic[U]):
 
     def __init__(self, target: str, /, *, dirhide: bool = True) -> None:
         if "." in target:
-            raise ValueError(f"Unsupported alias target: {target!r}")
+            raise ValueError(f"Unsupported alias target: {target!r}")  # noqa: TRY003
 
         super().__init__()
         self.target = target
@@ -269,7 +286,7 @@ class Alias(Accessor["U"], t.Generic[U]):
 
     def __set_name__(self, owner: type[t.Any], name: str) -> None:
         if not hasattr(owner, self.target):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot create alias {owner.__name__}.{name}:"
                 f" Target {self.target!r} is not defined"
                 " (make sure to define the Alias after the target, not before)"
@@ -335,7 +352,7 @@ class DeprecatedAccessor(Accessor[T_co]):
 
     def __set_name__(self, owner: type[t.Any], name: str) -> None:
         if not hasattr(owner, self.alternative):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot deprecate {owner.__name__}.{name}:"
                 f" Alternative {self.alternative!r} is not defined"
                 " (make sure to define the DeprecatedAccessor"
@@ -346,7 +363,7 @@ class DeprecatedAccessor(Accessor[T_co]):
         if isinstance(alt, DeprecatedAccessor) or (
             isinstance(alt, property) and hasattr(alt.fget, "__deprecated__")
         ):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot deprecate {owner.__name__}.{name}:"
                 f" Alternative {self.alternative!r} is also deprecated"
             )
@@ -422,7 +439,7 @@ class Single(Accessor[T_co | None], t.Generic[T_co]):
 
         objs: t.Any = self.wrapped.__get__(obj, type(obj))
         if not isinstance(objs, _obj.ElementList):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Expected a list from wrapped accessor on {self._qualname},"
                 f" got {type(objs).__name__}"
             )
@@ -443,7 +460,7 @@ class Single(Accessor[T_co | None], t.Generic[T_co]):
         """Delete the attribute."""
         if self.enforce:
             o = getattr(obj, "_short_repr_", obj.__repr__)()
-            raise InvalidModificationError(
+            raise InvalidModificationError(  # noqa: TRY003
                 f"Cannot delete required attribute {self._qualname!r} from {o}"
             )
         self.wrapped.__delete__(obj)
@@ -689,7 +706,7 @@ class WritableAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         obj: _obj.ModelObject,
         value: T_co | NewObject | cabc.Iterable[T_co | NewObject],
     ) -> None:
-        raise TypeError(f"Cannot set {self} on {type(obj).__name__}")
+        raise TypeError(f"Cannot set {self} on {type(obj).__name__}")  # noqa: TRY003
 
     def create(
         self,
@@ -714,14 +731,14 @@ class WritableAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             the object's type, some attributes may be required.
         """
         del elmlist, typehint, kw
-        raise TypeError(f"Cannot create objects on {self}")
+        raise TypeError(f"Cannot create objects on {self}")  # noqa: TRY003
 
     def create_singleattr(
         self, elmlist: _obj.ElementListCouplingMixin, arg: t.Any, /
     ) -> T_co:
         """Create an element that only has a single attribute of interest."""
         if self.single_attr is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot create object from string, a dictionary is required"
             )
         return self.create(elmlist, **{self.single_attr: arg})
@@ -786,11 +803,11 @@ class WritableAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def _match_xtype(self, hint: str, /) -> tuple[type[T_co], str]:
         """Find the right class for the given ``xsi:type``."""
         if not isinstance(hint, str):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Expected str as first type, got {type(hint).__name__!r}"
             )
 
-        (cls,) = t.cast(tuple[type[T_co]], _obj.find_wrapper(hint))
+        (cls,) = t.cast("tuple[type[T_co]]", _obj.find_wrapper(hint))
         return (cls, build_xtype(cls))  # type: ignore[deprecated]
 
     def _guess_xtype(self) -> tuple[type[T_co], str]:
@@ -800,7 +817,7 @@ class WritableAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             pass
         else:
             return super_guess()
-        raise TypeError(f"{self._qualname} requires a type hint")
+        raise TypeError(f"{self._qualname} requires a type hint")  # noqa: TRY003
 
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
@@ -949,16 +966,16 @@ class PhysicalAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         if fixed_length > 0:
             self.list_extra_args["fixed_length"] = fixed_length
         elif fixed_length < 0:
-            raise ValueError("List length cannot be negative")
+            raise ValueError("List length cannot be negative")  # noqa: TRY003
 
     def _guess_xtype(self) -> tuple[type[T_co], str]:
         """Try to guess the type of element that should be created."""
         if self.class_ is _obj.ModelElement or self.class_ is None:
-            raise ValueError("Multiple object types that can be created")
+            raise ValueError("Multiple object types that can be created")  # noqa: TRY003
         if not self.xtypes:
-            raise ValueError("No matching `xsi:type` found")
+            raise ValueError("No matching `xsi:type` found")  # noqa: TRY003
         if len(self.xtypes) > 1:
-            raise ValueError("Multiple matching `xsi:type`s")
+            raise ValueError("Multiple matching `xsi:type`s")  # noqa: TRY003
         return self.class_, next(iter(self.xtypes))
 
     def _make_list(self, parent_obj, elements):
@@ -1091,7 +1108,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     ) -> None:
         if self.aslist:
             if isinstance(value, str) or not isinstance(value, cabc.Iterable):
-                raise TypeError("Can only set list attribute to an iterable")
+                raise TypeError("Can only set list attribute to an iterable")  # noqa: TRY003
             list = self.__get__(obj)
             for v in list:
                 self.delete(list, v)
@@ -1102,7 +1119,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
                     self.insert(list, i, v)
         else:
             if isinstance(value, cabc.Iterable) and not isinstance(value, str):
-                raise TypeError("Cannot set non-list attribute to an iterable")
+                raise TypeError("Cannot set non-list attribute to an iterable")  # noqa: TRY003
             if not isinstance(value, NewObject):
                 raise NotImplementedError(
                     "Moving model objects is not supported yet"
@@ -1115,14 +1132,14 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
 
     def __delete__(self, obj: _obj.ModelObject) -> None:
         if self.rootelem:
-            raise TypeError("Cannot delete due to 'rootelem' being set")
+            raise TypeError("Cannot delete due to 'rootelem' being set")  # noqa: TRY003
         if self.follow_abstract:
-            raise TypeError("Cannot delete when following abstract types")
+            raise TypeError("Cannot delete when following abstract types")  # noqa: TRY003
 
         if self.aslist is not None:
             self._delete(obj._model, list(self._getsubelems(obj)))
         else:
-            raise TypeError(f"Cannot delete {self._qualname}")
+            raise TypeError(f"Cannot delete {self._qualname}")  # noqa: TRY003
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self._qualname!r} of {self.xtypes!r}>"
@@ -1165,7 +1182,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
             if abstype := elem.get("abstractType"):
                 elem = obj._model._loader[abstype]
             else:
-                raise RuntimeError("Broken XML: No abstractType defined?")
+                raise RuntimeError("Broken XML: No abstractType defined?")  # noqa: TRY003
         return elem
 
     def _getsubelems(
@@ -1194,7 +1211,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         **kw: t.Any,
     ) -> T_co:
         if self.rootelem:
-            raise TypeError(f"Cannot create objects on {self}")
+            raise TypeError(f"Cannot create objects on {self}")  # noqa: TRY003
 
         return self._create(elmlist._parent, None, typehint, **kw)
 
@@ -1211,7 +1228,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
             )
 
         if value._model is not elmlist._model:
-            raise ValueError("Cannot move elements between models")
+            raise ValueError("Cannot move elements between models")  # noqa: TRY003
         try:
             indexof = elmlist._parent._element.index
             if index > 0:
@@ -1450,7 +1467,7 @@ class Allocation(Relationship[T_co]):
             transition to 'by_class'.
         """
         if not isinstance(tag, str | None):
-            raise TypeError(f"tag must be a str, not {type(tag).__name__}")
+            raise TypeError(f"tag must be a str, not {type(tag).__name__}")  # noqa: TRY003
         if aslist is not _NOT_SPECIFIED:
             warnings.warn(
                 "The aslist argument is deprecated and will be removed soon",
@@ -1487,7 +1504,7 @@ class Allocation(Relationship[T_co]):
             )
             if ":" in alloc_type:
                 alloc_type = t.cast(
-                    tuple[str, str], tuple(alloc_type.rsplit(":", 1))
+                    "tuple[str, str]", tuple(alloc_type.rsplit(":", 1))
                 )
                 self.alloc_type = (
                     _obj.find_namespace(alloc_type[0]),
@@ -1497,7 +1514,7 @@ class Allocation(Relationship[T_co]):
                 self.alloc_type = _obj.resolve_class_name(("", alloc_type))
         elif isinstance(alloc_type, type):
             if not issubclass(alloc_type, _obj.ModelElement):
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     "Allocation class must be a subclass of ModelElement:"
                     f" {alloc_type.__module__}.{alloc_type.__name__}"
                 )
@@ -1516,7 +1533,7 @@ class Allocation(Relationship[T_co]):
         elif isinstance(alloc_type, tuple) and len(alloc_type) == 2:
             self.alloc_type = _obj.resolve_class_name(alloc_type)
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Malformed alloc_type, expected a 2-tuple: {alloc_type!r}"
             )
 
@@ -1547,7 +1564,7 @@ class Allocation(Relationship[T_co]):
 
         # TODO extend None check to self.tag when removing deprecated features
         if None in (self.alloc_type, self.attr):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -1585,14 +1602,14 @@ class Allocation(Relationship[T_co]):
 
         te.assert_type(value, cabc.Iterable[T_co | NewObject])
         if any(isinstance(i, NewObject) for i in value):
-            raise TypeError(f"Cannot create objects on {self}")
-        value = t.cast(cabc.Iterable[T_co], value)
+            raise TypeError(f"Cannot create objects on {self}")  # noqa: TRY003
+        value = t.cast("cabc.Iterable[T_co]", value)
 
         # TODO Remove this extra check when removing deprecated features
         if self.tag is None:
-            raise TypeError(f"Cannot set: XML tag not set on {self}")
+            raise TypeError(f"Cannot set: XML tag not set on {self}")  # noqa: TRY003
         if None in (self.tag, self.alloc_type, self.attr):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -1672,7 +1689,7 @@ class Allocation(Relationship[T_co]):
         if __debug__:
             alloc_cls = parent._model.resolve_class(self.alloc_type)
             if alloc_cls.__capella_abstract__:
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY003
                     f"Invalid metamodel: {alloc_cls} is abstract,"
                     f" and cannot be used with Allocation {self._qualname}"
                 )
@@ -1724,13 +1741,13 @@ class Allocation(Relationship[T_co]):
             # TODO Change to RuntimeError when removing deprecated features
             raise NotImplementedError(f"Cannot set: XML tag not set on {self}")
         if isinstance(value, NewObject):
-            raise TypeError(f"Cannot create objects on {self}")
+            raise TypeError(f"Cannot create objects on {self}")  # noqa: TRY003
         if value._model is not elmlist._parent._model:
-            raise ValueError("Cannot insert elements from different models")
+            raise ValueError("Cannot insert elements from different models")  # noqa: TRY003
         for b in (self.class_, *bounds):
             bcls = elmlist._model.resolve_class(b)
             if not isinstance(value, bcls):
-                raise InvalidModificationError(
+                raise InvalidModificationError(  # noqa: TRY003
                     f"Cannot insert into {self._qualname}:"
                     f" Objects must be instances of {b[0].alias}:{b[1]},"
                     f" not {type(value)}"
@@ -1756,7 +1773,7 @@ class Allocation(Relationship[T_co]):
             else:
                 self.__insert_refobj(elmlist._parent, refobj, before=None)
         elmlist._elements = list(self.__find_refs(elmlist._parent))
-        return t.cast(T_co, value)
+        return t.cast("T_co", value)
 
     def delete(
         self,
@@ -1770,7 +1787,7 @@ class Allocation(Relationship[T_co]):
                 parent._element.remove(ref)
                 break
         else:
-            raise ValueError("Cannot delete: Target object not in this list")
+            raise ValueError("Cannot delete: Target object not in this list")  # noqa: TRY003
 
     @contextlib.contextmanager
     def purge_references(
@@ -1812,7 +1829,7 @@ class Allocation(Relationship[T_co]):
         if None not in (self.alloc_type, self.attr):
             return
         if super_acc is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot inherit {type(self).__name__} configuration:"
                 f" No super class of {self.__objclass__.__name__}"
                 f" defines {self.__name__!r}"
@@ -1920,7 +1937,7 @@ class Association(Relationship[T_co]):
             try:
                 ns = class_.__capella_namespace__
             except AttributeError:
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY003
                     f"Invalid class without namespace: {class_!r}"
                 ) from None
             class_ = (ns, class_.__name__)
@@ -1943,7 +1960,7 @@ class Association(Relationship[T_co]):
             return self
 
         if self.attr is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -1976,11 +1993,11 @@ class Association(Relationship[T_co]):
 
         te.assert_type(value, cabc.Iterable[T_co | NewObject])
         if any(isinstance(i, NewObject) for i in value):
-            raise TypeError("Cannot create new objects on an Association")
-        value = t.cast(cabc.Iterable[T_co], value)
+            raise TypeError("Cannot create new objects on an Association")  # noqa: TRY003
+        value = t.cast("cabc.Iterable[T_co]", value)
 
         if self.attr is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -1989,7 +2006,7 @@ class Association(Relationship[T_co]):
 
     def __delete__(self, obj: _obj.ModelObject) -> None:
         if self.attr is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2014,13 +2031,13 @@ class Association(Relationship[T_co]):
         bounds: tuple[_obj.ClassName, ...] = (),
     ) -> T_co:
         if isinstance(value, NewObject):
-            raise TypeError(f"Cannot create new objects on {self}")
+            raise TypeError(f"Cannot create new objects on {self}")  # noqa: TRY003
         if value._model is not elmlist._parent._model:
-            raise ValueError("Cannot insert elements from different models")
+            raise ValueError("Cannot insert elements from different models")  # noqa: TRY003
         for b in bounds:
             bcls = elmlist._model.resolve_class(b)
             if not isinstance(value, bcls):
-                raise InvalidModificationError(
+                raise InvalidModificationError(  # noqa: TRY003
                     f"Cannot insert into {self._qualname}:"
                     f" Objects must be instances of {b[0].alias}:{b[1]},"
                     f" not {type(value)}"
@@ -2028,7 +2045,7 @@ class Association(Relationship[T_co]):
 
         objs = [*elmlist[:index], value, *elmlist[index:]]
         self.__set_links(elmlist._parent, objs)
-        return t.cast(T_co, value)
+        return t.cast("T_co", value)
 
     def delete(
         self, elmlist: _obj.ElementListCouplingMixin, obj: _obj.ModelObject
@@ -2040,7 +2057,7 @@ class Association(Relationship[T_co]):
         self, obj: _obj.ModelObject, values: cabc.Iterable[T_co]
     ) -> None:
         if self.attr is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2049,14 +2066,14 @@ class Association(Relationship[T_co]):
         parts: list[str] = []
         for value in values:
             if not isinstance(value, class_):
-                raise InvalidModificationError(
+                raise InvalidModificationError(  # noqa: TRY003
                     f"Cannot insert into {self._qualname}:"
                     " Objects must be instances of"
                     f" {self.class_[0].alias}:{self.class_[1]},"
                     f" not {type(value)!r}"
                 )
             if value._model is not obj._model:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     "Cannot insert elements from different models"
                 )
             link = obj._model._loader.create_link(obj._element, value._element)
@@ -2068,7 +2085,7 @@ class Association(Relationship[T_co]):
         self, obj: _obj.ModelObject, target: _obj.ModelObject
     ) -> cabc.Generator[None, None, None]:
         if self.attr is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2100,7 +2117,7 @@ class Association(Relationship[T_co]):
             return
 
         if super_acc is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot inherit {type(self).__name__} configuration:"
                 f" No super class of {self.__objclass__.__name__}"
                 f" defines {self.__name__}"
@@ -2159,11 +2176,11 @@ class IndexAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             return self
         container = getattr(obj, self.wrapped)
         if not isinstance(container, _obj.ElementList):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Cannot get {self._qualname}: {self.wrapped} is not a list"
             )
         if len(container) <= self.index:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Broken XML: Expected at least {self.index + 1} elements,"
                 f" found {len(container)}"
             )
@@ -2172,12 +2189,12 @@ class IndexAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def __set__(self, obj: _obj.ModelObject, value: t.Any) -> None:
         container = getattr(obj, self.wrapped)
         if not isinstance(container, _obj.ElementListCouplingMixin):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot set {self._qualname}:"
                 f" {self.wrapped} is not a coupled list"
             )
         if len(container) < self.index:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Broken XML: Expected at least {self.index + 1} elements,"
                 f" found {len(container)}"
             )
@@ -2236,7 +2253,7 @@ class ParentAccessor(Accessor["_obj.ModelObject"]):
         parent = next(obj._model._loader.iterancestors(obj._element), None)
         if parent is None:
             objrepr = getattr(obj, "_short_repr_", obj.__repr__)()
-            raise AttributeError(f"Object {objrepr} is orphaned")
+            raise AttributeError(f"Object {objrepr} is orphaned")  # noqa: TRY003
         return _obj.wrap_xml(obj._model, parent)
 
 
@@ -2374,7 +2391,7 @@ class _Specification(t.MutableMapping[str, str]):
     @classmethod
     def from_model(cls, _1: capellambse.MelodyModel, _2: t.Any) -> te.Self:
         """Specifications can not be instantiated."""
-        raise RuntimeError("Cannot create a specification from a model")
+        raise RuntimeError("Cannot create a specification from a model")  # noqa: TRY003
 
 
 class SpecificationAccessor(Accessor[_Specification]):
@@ -2390,7 +2407,7 @@ class SpecificationAccessor(Accessor[_Specification]):
         try:
             spec_elm = next(obj._element.iterchildren("ownedSpecification"))
         except StopIteration:
-            raise AttributeError("No specification found") from None
+            raise AttributeError("No specification found") from None  # noqa: TRY003
 
         return _Specification(obj._model, spec_elm)
 
@@ -2491,7 +2508,7 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
                 stacklevel=2,
             )
             if not hasattr(class_, "__capella_namespace__"):
-                raise TypeError(f"Class does not have a namespace: {class_!r}")
+                raise TypeError(f"Class does not have a namespace: {class_!r}")  # noqa: TRY003
             self.class_ = (class_.__capella_namespace__, class_.__name__)
         self.attrs = tuple(operator.attrgetter(i) for i in attrs)
         self.list_extra_args = {
@@ -2534,7 +2551,7 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def __repr__(self) -> str:
         try:
             attrs: cabc.Sequence[t.Any] = [
-                i for (_, (i,), *_) in t.cast(t.Any, self.attrs.__reduce__())
+                i for (_, (i,), *_) in t.cast("t.Any", self.attrs.__reduce__())
             ]
         except Exception:
             attrs = self.attrs
@@ -2584,7 +2601,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             return self
 
         if self.wrapped is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2592,7 +2609,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         cls = obj._model.resolve_class(self.class_)
         parent_elts = self.wrapped.__get__(obj, objtype)
         if not isinstance(parent_elts, _obj.ElementList):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Parent accessor {self.wrapped!r}"
                 f" did not return an ElementList: {parent_elts!r}"
             )
@@ -2615,7 +2632,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         value: cabc.Iterable[T_co | NewObject],
     ) -> None:
         if self.wrapped is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2630,13 +2647,13 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
 
     def __delete__(self, obj: _obj.ModelObject) -> None:
         if self.wrapped is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
 
         if not isinstance(self.wrapped, Relationship):
-            raise AttributeError(f"Cannot delete from {self._qualname}")
+            raise AttributeError(f"Cannot delete from {self._qualname}")  # noqa: TRY003
 
         children = self.__get__(obj, type(obj))
         assert isinstance(children, _obj.ElementListCouplingMixin)
@@ -2645,7 +2662,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def __set_name__(self, owner: type[t.Any], name: str) -> None:
         wrapped = getattr(owner, self.attr)
         if not isinstance(wrapped, Relationship):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Can only filter on Relationship accessors, not"
                 f" {type(wrapped).__name__}"
             )
@@ -2672,7 +2689,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         bounds: tuple[_obj.ClassName, ...] = (),
     ) -> T_co:
         if self.wrapped is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2697,13 +2714,13 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         self, elmlist: _obj.ElementListCouplingMixin, obj: _obj.ModelObject
     ) -> None:
         if self.wrapped is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
 
         if not isinstance(self.wrapped, Relationship):
-            raise AttributeError(f"Cannot delete from {self._qualname}")
+            raise AttributeError(f"Cannot delete from {self._qualname}")  # noqa: TRY003
 
         unfiltered = self.wrapped.__get__(
             elmlist._parent, type(elmlist._parent)
@@ -2716,7 +2733,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         self, obj: _obj.ModelObject, target: _obj.ModelObject
     ) -> cabc.Generator[None, None, None]:
         if self.wrapped is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -2790,7 +2807,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         elif isinstance(value, cabc.Iterable):
             value = list(value)
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Expected list for {self._qualname!r},"
                 f" got {type(value).__name__}"
             )
@@ -2800,7 +2817,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
 
         if not all(isinstance(i, self.class_) for i in value):
             orepr = getattr(obj, "_short_repr_", obj.__repr__)()
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Expected all objects in {self._qualname!r}"
                 f" to be of type {self.class_.__name__!r},"
                 f" but found a {type(value).__name__!r}"
@@ -2825,7 +2842,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         **kw: t.Any,
     ) -> T_co:
         if typehint:
-            raise TypeError(f"{self._qualname} does not support type hints")
+            raise TypeError(f"{self._qualname} does not support type hints")  # noqa: TRY003
         acc: WritableAccessor = getattr(self.class_, self.attr)
         obj = acc.create(elmlist, build_xtype(self.class_), **kw)  # type: ignore[deprecated]
         assert isinstance(obj, self.class_)
@@ -2840,7 +2857,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         if isinstance(value, NewObject):
             raise NotImplementedError(f"Cannot create objects on {self}")
         if not isinstance(value, self.class_):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Expected {self.class_.__name__}, got {type(value).__name__}"
             )
         acc: WritableAccessor = getattr(self.class_, self.attr)
@@ -2976,7 +2993,7 @@ class Containment(Relationship[T_co]):
                 stacklevel=2,
             )
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Invalid class_ specified, expected a 2-tuple: {class_!r}"
             )
 
@@ -2996,7 +3013,7 @@ class Containment(Relationship[T_co]):
             return self
 
         if self.role_tag is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -3055,7 +3072,7 @@ class Containment(Relationship[T_co]):
         bounds: tuple[_obj.ClassName, ...] = (),
     ) -> T_co:
         if self.role_tag is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"{type(self).__name__} was not initialized properly;"
                 " make sure that __set_name__ gets called"
             )
@@ -3069,7 +3086,7 @@ class Containment(Relationship[T_co]):
             isinstance(value, _obj.ModelObject)
             and value._model is not elmlist._model
         ):
-            raise ValueError("Cannot move elements between models")
+            raise ValueError("Cannot move elements between models")  # noqa: TRY003
         try:
             indexof = elmlist._parent._element.index
             if index > 0:
@@ -3150,7 +3167,7 @@ class Containment(Relationship[T_co]):
         ]
         if not classes:
             basecls = model.resolve_class(self.class_)
-            raise InvalidModificationError(
+            raise InvalidModificationError(  # noqa: TRY003
                 f"No concrete subclass of {basecls!r}"
                 f" satisfies all bounds: {clsbounds!r}"
             )
@@ -3158,7 +3175,7 @@ class Containment(Relationship[T_co]):
         if uclsname := self.type_hint_map.get(hint.lower()):
             cls = model.resolve_class(uclsname)
             if cls not in classes:
-                raise InvalidModificationError(
+                raise InvalidModificationError(  # noqa: TRY003
                     f"Type hint {hint!r} maps to class {cls.__name__!r},"
                     f" which doesn't satisfy all bounds: {clsbounds!r}"
                 )
@@ -3174,9 +3191,9 @@ class Containment(Relationship[T_co]):
                     classes = [i]
                     break
             else:
-                raise ValueError(f"Invalid type hint: {hint}")
+                raise ValueError(f"Invalid type hint: {hint}")  # noqa: TRY003
 
-        return t.cast(list[type[T_co]], classes)
+        return t.cast("list[type[T_co]]", classes)
 
     def _insert_create(
         self,
@@ -3260,7 +3277,7 @@ def no_list(
     if not elems:  # pragma: no cover
         return None
     if len(elems) > 1:  # pragma: no cover
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY003
             f"Expected 1 object for {desc._qualname}, got {len(elems)}"
         )
     return _obj.wrap_xml(model, elems[0])

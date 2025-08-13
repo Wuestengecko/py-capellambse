@@ -37,13 +37,12 @@ import re
 import sys
 import typing as t
 
-from lxml import etree
-
 import capellambse.model as m
 from capellambse import helpers
 
 if t.TYPE_CHECKING:
     import markupsafe
+    from lxml import etree
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -350,7 +349,7 @@ class EnumerationValueAttribute(Attribute):
     def value(self):
         vals = self.values
         if len(vals) > 1:
-            raise TypeError("Multi-value enumeration, use `.values` instead")
+            raise TypeError("Multi-value enumeration, use `.values` instead")  # noqa: TRY003
         if len(vals) == 1:
             return vals[0]
         return None

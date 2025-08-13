@@ -11,9 +11,9 @@ import shutil
 import subprocess
 import sys
 from importlib import metadata
+from typing import TYPE_CHECKING
 
 import pytest
-import requests_mock
 from lxml import etree
 from lxml.builder import E
 
@@ -23,6 +23,9 @@ from capellambse.filehandler import gitlab_artifacts, memory
 from capellambse.loader import exs
 
 from .conftest import TEST_DATA, Models  # type: ignore
+
+if TYPE_CHECKING:
+    import requests_mock
 
 DUMMY_SVG = b'<svg xmlns="http://www.w3.org/2000/svg"/>'
 DUMMY_PNG_B64 = (

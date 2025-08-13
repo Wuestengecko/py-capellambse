@@ -57,16 +57,16 @@ def _main(since: str, until: str) -> None:
         LOGGER.warning("authors.toml not found, cannot map authors to users")
         authormap = {}
 
-    format = "format:%s%x00%aE%x00%H"
+    logformat = "format:%s%x00%aE%x00%H"
     all_commits = subprocess.check_output(
-        ["git", "log", "-z", f"--format={format}", f"{since}..{until}"],
+        ["git", "log", "-z", f"--format={logformat}", f"{since}..{until}"],
         encoding="utf-8",
     )
     commits: dict[str, list[str]] = collections.defaultdict(list)
     breaking_changes: list[str] = []
 
     unknown_authors: set[str] = set()
-    for msg, author, hash in helpers.ntuples(3, all_commits.split("\0")):
+    for msg, author, commitid in helpers.ntuples(3, all_commits.split("\0")):
         if author_match := MAILUSER.search(author):
             author = "@" + author_match.group("user")
         else:
@@ -78,9 +78,9 @@ def _main(since: str, until: str) -> None:
                     unknown_authors.add(author)
 
         if not (msg_match := CONCOM.search(msg)):
-            LOGGER.warning("Bad commit subject: %s %s", hash, msg)
+            LOGGER.warning("Bad commit subject: %s %s", commitid, msg)
             msg = msg[0].upper() + msg[1:]
-            commits["BAD"].append(f"{msg} *by {author}* ({hash})")
+            commits["BAD"].append(f"{msg} *by {author}* ({commitid})")
             continue
 
         ctype, scope, breaking, subject = msg_match.group(
@@ -88,7 +88,7 @@ def _main(since: str, until: str) -> None:
         )
         scope = f"**{scope}**: " if scope else ""
         subject = subject[0].upper() + subject[1:]
-        commits[ctype].append(f"{scope}{subject} *by {author}* ({hash})")
+        commits[ctype].append(f"{scope}{subject} *by {author}* ({commitid})")
         if breaking:
             breaking_changes.append(f"{scope}{subject}")
 
@@ -97,7 +97,7 @@ def _main(since: str, until: str) -> None:
             custom_changes = f.read().strip()
     except FileNotFoundError:
         custom_changes = ""
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001
         errtext = f" {type(err).__name__}: {err}"
         custom_changes = f"***Cannot read notable-changes.md:*** {errtext}"
 

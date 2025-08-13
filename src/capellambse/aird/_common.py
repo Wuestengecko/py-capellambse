@@ -4,13 +4,11 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import enum
 import logging
 import math
 import operator
-import pathlib
 import re
 import typing as t
 
@@ -19,6 +17,10 @@ from lxml import builder, etree
 import capellambse._namespaces as _n
 import capellambse.loader
 from capellambse import diagram, helpers
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import pathlib
 
 LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -141,7 +143,7 @@ class StackingBox(diagram.Box):
     @size.setter
     def size(self, new_size: diagram.Vec2ish) -> None:
         if any(i != 0 for i in new_size):
-            raise TypeError("The size of this Box cannot be changed directly")
+            raise TypeError("The size of this Box cannot be changed directly")  # noqa: TRY003
 
     @property
     def stacking_mode(self) -> StackingMode:
@@ -158,7 +160,7 @@ class StackingBox(diagram.Box):
                 try:
                     new_mode = StackingMode[new_mode]
                 except KeyError:
-                    raise ValueError(
+                    raise ValueError(  # noqa: TRY003
                         f"Invalid stacking mode: {new_mode!r}"
                     ) from None
         self.children.stacking_mode = new_mode
@@ -182,7 +184,7 @@ class StackingBox(diagram.Box):
             except AttributeError:
                 pass
             else:
-                children._restack()
+                children.restack()
 
     def snap_to_parent(self, *_: t.Any) -> None:
         pass  # FIXME
@@ -217,18 +219,18 @@ class StackingBox(diagram.Box):
             value: str | cabc.Iterable[str],
         ) -> None:
             self.__list[index] = value  # type: ignore[index,assignment]
-            self.__parent.children._restack()
+            self.__parent.children.restack()
 
         def __delitem__(self, index: int | slice) -> None:
             del self.__list[index]
-            self.__parent.children._restack()
+            self.__parent.children.restack()
 
         def __len__(self) -> int:
             return len(self.__list)
 
         def insert(self, index: int, value: str) -> None:
             self.__list.insert(index, value)
-            self.__parent.children._restack()
+            self.__parent.children.restack()
 
         def __repr__(self) -> str:
             return repr(self.__list)
@@ -273,32 +275,34 @@ class StackingBox(diagram.Box):
             ),
         ) -> None:
             self.__list[index] = value  # type: ignore[index, assignment]
-            self._restack()
+            self.restack()
 
         def __delitem__(self, index: int | slice) -> None:
             del self.__list[index]
-            self._restack()
+            self.restack()
 
         def __len__(self) -> int:
             return len(self.__list)
 
         def insert(self, index: int, value: diagram.DiagramElement) -> None:
             self.__list.insert(index, value)
-            self._restack()
+            self.restack()
 
-        def _restack(self) -> None:
+        def restack(self) -> None:
             if self.stacking_mode is StackingMode.VERTICAL:
                 xpos, ypos = self.__parent.pos
-                ypos += self.__parent._topsection_size()[1]
+                ypos += self.__parent._topsection_size()[1]  # noqa: SLF001
                 for obj in self.__list:
                     obj_bounds = obj.bounds
                     offset = diagram.Vector2D(xpos, ypos) - obj_bounds.pos
                     obj.move(offset)
                     ypos += obj_bounds.size.y
             elif self.stacking_mode is StackingMode.HORIZONTAL:
-                raise NotImplementedError()
+                raise NotImplementedError(
+                    "Horizontal stacking is not implemented yet"
+                )
             else:
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY003
                     f"Invalid stacking_mode: {self.stacking_mode!r}"
                 )
 
@@ -347,7 +351,7 @@ class CenterAnchoredBox(diagram.Box):
         return super().__repr__().replace(repr(self.pos), repr(self.center), 1)
 
 
-class SkipObject(Exception):
+class SkipObject(Exception):  # noqa: N818 # not an error
     """Raised to stop parsing this object."""
 
     @classmethod

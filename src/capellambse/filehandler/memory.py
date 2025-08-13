@@ -9,15 +9,17 @@ __all__ = [
     "MemoryFilePath",
 ]
 
-import collections.abc as cabc
 import io
-import os
 import pathlib
 import typing as t
 
 from capellambse import helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import os
 
 
 class MemoryFileHandler(abc.FileHandler):
@@ -41,7 +43,7 @@ class MemoryFileHandler(abc.FileHandler):
             An optional path to prepend to all opened (physical) files.
         """
         if path != "memory:":
-            raise ValueError(f"Unsupported path for MemoryFileHandler: {path}")
+            raise ValueError(f"Unsupported path for MemoryFileHandler: {path}")  # noqa: TRY003
         super().__init__(path, subdir=subdir)
 
         self._data: dict[pathlib.PurePosixPath, bytearray] = {}
@@ -93,19 +95,19 @@ class MemoryFile(t.BinaryIO):
     def __enter__(self) -> MemoryFile:
         return self
 
-    def __exit__(self, *args: t.Any) -> None:
+    def __exit__(self, *args: object) -> None:
         pass
 
     def write(self, s: bytes | bytearray) -> int:  # type: ignore[override]
         if self._mode != "w":
-            raise io.UnsupportedOperation("not writable")
+            raise io.UnsupportedOperation("not writable")  # noqa: TRY003
         self._data[self._pos : self._pos + len(s)] = s
         self._pos += len(s)
         return len(s)
 
     def read(self, n: int = -1) -> bytes:
         if self._mode != "r":
-            raise io.UnsupportedOperation("not readable")
+            raise io.UnsupportedOperation("not readable")  # noqa: TRY003
         if n < 0:
             n = len(self._data) - self._pos
         result = self._data[self._pos : self._pos + n]

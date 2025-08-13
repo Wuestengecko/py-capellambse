@@ -10,14 +10,17 @@ import typing as t
 
 import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 import capellambse
 import capellambse.model as m
 from capellambse.metamodel import capellacore
 
-from . import _config
 from ._config import NS as NS
+
+if t.TYPE_CHECKING:
+    from lxml import etree
+
+    from . import _config
 
 e = markupsafe.escape
 
@@ -87,7 +90,7 @@ class ObjectPVMT:
         return m.ElementList(self._model, elms, capellacore.PropertyValueGroup)
 
     def __init__(self, *_a: t.Any, **_k: t.Any) -> None:
-        raise TypeError(f"Cannot instantiate {type(self).__name__} directly")
+        raise TypeError(f"Cannot instantiate {type(self).__name__} directly")  # noqa: TRY003
 
     @classmethod
     def from_model(
@@ -103,13 +106,13 @@ class ObjectPVMT:
     def __getitem__(self, key: str) -> t.Any:
         path = key.split(".")
         if not 2 <= len(path) <= 3:
-            raise ValueError("Provide name as 'dom.group' or 'dom.group.prop'")
+            raise ValueError("Provide name as 'dom.group' or 'dom.group.prop'")  # noqa: TRY003
 
         domain, groupname, *_ = path
         try:
             groupdef = self._model.pvmt.domains[domain].groups[groupname]
         except KeyError:
-            raise KeyError(
+            raise KeyError(  # noqa: TRY003
                 f"Domain or group not found: {domain}.{groupname}"
             ) from None
 
@@ -121,7 +124,7 @@ class ObjectPVMT:
     def __setitem__(self, key: str, value: t.Any) -> None:
         path = key.split(".")
         if len(path) != 3:
-            raise ValueError("Specify property to set as 'domain.group.prop'")
+            raise ValueError("Specify property to set as 'domain.group.prop'")  # noqa: TRY003
         dom, group, prop = path
         groupdef = self._model.pvmt.domains[dom].groups[group]
         groupdef.apply(self.owner).property_values[prop] = value
