@@ -14,21 +14,24 @@ __all__ = [
     "SelectorRules",
 ]
 
-import collections.abc as cabc
 import dataclasses
 import logging
 import operator
 import re
 import typing as t
 
-import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 import capellambse
 import capellambse.metamodel as mm
 import capellambse.model as m
 from capellambse import helpers
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    import markupsafe
+    from lxml import etree
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +86,7 @@ def _matchprops(
     for prop, op, wanted in props:
         group, prop = prop.rsplit(".", 1)
         try:
-            actual = obj.property_value_groups[group][prop]  # type: ignore
+            actual = obj.property_value_groups[group][prop]  # type: ignore[attr-defined]
         except (AttributeError, KeyError):
             return False
 
@@ -95,7 +98,7 @@ def _matchprops(
         elif isinstance(actual, mm.capellacore.EnumerationPropertyLiteral):
             ismatch = cmp(actual.name, wanted)
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Unhandled property value type: {type(actual).__name__}"
             )
 
@@ -119,7 +122,7 @@ class SelectorRules:
             return ()
 
         if self._model is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"This {type(self).__name__} is not associated with a model"
             )
 
@@ -164,7 +167,7 @@ class SelectorRules:
             value = rule.group("value")
             match = _PROP_RE.fullmatch(value)
             if not match:
-                raise RuntimeError(f"Invalid property spec: {value!r}")
+                raise RuntimeError(f"Invalid property spec: {value!r}")  # noqa: TRY003
             prop, op, val = match.group("prop", "op", "val")
             assert isinstance(prop, str)
             assert isinstance(op, str)
@@ -191,7 +194,7 @@ class PVMTDescriptionProperty(m.BasePOD[SelectorRules]):
         if isinstance(value, SelectorRules):
             value = value.raw
         elif not isinstance(value, str):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Unsupported type, must be str or SelectorRules:"
                 f" {type(value).__name__}"
             )
@@ -250,9 +253,9 @@ class ManagedGroup(mm.capellacore.PropertyValueGroup):
 
         objrepr = getattr(obj, "_short_repr_", lambda: repr(obj))
         if not hasattr(obj, "property_value_groups"):
-            raise TypeError(f"Object cannot own PV groups: {objrepr()}")
+            raise TypeError(f"Object cannot own PV groups: {objrepr()}")  # noqa: TRY003
         if not hasattr(obj, "applied_property_value_groups"):
-            raise TypeError(f"Cannot apply PV groups to {objrepr()}")
+            raise TypeError(f"Cannot apply PV groups to {objrepr()}")  # noqa: TRY003
 
         groupname = f"{self.parent.name}.{self.name}"
         try:
@@ -324,13 +327,13 @@ class ManagedDomain(mm.capellacore.PropertyValuePkg):
         self = m.wrap_xml(model, element, cls)
         try:
             version = self.property_values.by_name("version").value
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.property_values.create(
                 name="version", value=PVMT_SCHEMA_VERSION
             )
         else:
             if version != PVMT_SCHEMA_VERSION:
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY003
                     f"Unsupported schema version {version!r}"
                     f" on PVMT element {self._short_repr_()}"
                 )

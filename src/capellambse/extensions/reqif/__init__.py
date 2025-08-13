@@ -9,8 +9,8 @@ from ._glue import *
 from .capellarequirements import *
 from .requirements import *
 
-from .capellarequirements import NS as CapellaRequirementsNS  # isort: skip
-from .requirements import NS as RequirementsNS  # isort: skip
+from .capellarequirements import NS as CapellaRequirementsNS  # isort: skip  # noqa: N811
+from .requirements import NS as RequirementsNS  # isort: skip  # noqa: N811
 
 if not t.TYPE_CHECKING:
     from .capellarequirements import __all__ as _cr_all
@@ -43,7 +43,7 @@ if not t.TYPE_CHECKING:
             )
             return AbstractRelation
 
-        raise AttributeError(f"{__name__} has no attribute {name}")
+        raise AttributeError(f"{__name__} has no attribute {name}")  # noqa: TRY003
 
 
 del t

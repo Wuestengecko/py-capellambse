@@ -102,16 +102,16 @@ def _derive_entrypoint(
                 path = nested_path.parent
                 return filehandler.get_filehandler(path, **kwargs), entrypoint
             if nested_path.is_file():
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"Invalid entrypoint: Not an .aird file: {nested_path}"
                 )
         path = filehandler.get_filehandler(path, **kwargs)
 
     aird_files = [i for i in path.iterdir() if i.name.endswith(".aird")]
     if not aird_files:
-        raise ValueError("No .aird file found, specify entrypoint")
+        raise ValueError("No .aird file found, specify entrypoint")  # noqa: TRY003
     if len(aird_files) > 1:
-        raise ValueError("Multiple .aird files found, specify entrypoint")
+        raise ValueError("Multiple .aird files found, specify entrypoint")  # noqa: TRY003
     entrypoint = pathlib.PurePosixPath(aird_files[0])
 
     return path, entrypoint
@@ -368,7 +368,7 @@ class ModelFile:
                     assert plugin.viewpoint is not None
                     vp_version = viewpoints.get(plugin.viewpoint)
                     if not vp_version:
-                        raise CorruptModelError(
+                        raise CorruptModelError(  # noqa: TRY003
                             f"Viewpoint not activated: {plugin.viewpoint}"
                         )
                     vp_version = _round_version(
@@ -541,14 +541,14 @@ class MelodyLoader:
             path, entrypoint, **kwargs
         )
         if self.entrypoint.suffix != ".aird":
-            raise ValueError("Invalid entrypoint, specify the ``.aird`` file")
+            raise ValueError("Invalid entrypoint, specify the ``.aird`` file")  # noqa: TRY003
 
         self.resources = ResourceLocationManager({"\0": handler})
         for resname, reshdl in (resources or {}).items():
             if not resname:
-                raise ValueError("Empty resource name")
+                raise ValueError("Empty resource name")  # noqa: TRY003
             if "/" in resname or "\0" in resname:
-                raise ValueError(f"Invalid resource name: {resname!r}")
+                raise ValueError(f"Invalid resource name: {resname!r}")  # noqa: TRY003
 
             if isinstance(reshdl, str | os.PathLike):
                 self.resources[resname] = filehandler.get_filehandler(reshdl)
@@ -586,7 +586,7 @@ class MelodyLoader:
                 self.__may_be_corrupt = True
                 has_dups = True
         if has_dups and not self.__ignore_uuid_dups:
-            raise CorruptModelError(
+            raise CorruptModelError(  # noqa: TRY003
                 "Model has duplicated UUIDs across fragments"
                 " - check the 'resources' for duplicate models"
             )
@@ -649,7 +649,7 @@ class MelodyLoader:
 
         overwrite_corrupt = kw.pop("i_have_a_recent_backup", False)
         if self.__may_be_corrupt and not overwrite_corrupt:
-            raise CorruptModelError(
+            raise CorruptModelError(  # noqa: TRY003
                 "Refusing to save a corrupt model without having a backup"
                 " (hint: pass i_have_a_recent_backup=True)"
             )
@@ -702,7 +702,7 @@ class MelodyLoader:
         try:
             _, tree = self._find_fragment(subtree)
         except ValueError:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 "Call idcache_index() after adding the subtree"
             ) from None
 
@@ -722,7 +722,7 @@ class MelodyLoader:
         try:
             _, tree = self._find_fragment(subtree)
         except ValueError:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 "Call idcache_remove() before removing the subtree"
             ) from None
 
@@ -765,7 +765,7 @@ class MelodyLoader:
                 tree.idcache_reserve(want)
                 return want
             else:
-                raise ValueError(f"UUID {want!r} is already in use")
+                raise ValueError(f"UUID {want!r} is already in use")  # noqa: TRY003
 
         while True:
             new_id = helpers.generate_id()
@@ -774,7 +774,7 @@ class MelodyLoader:
             except KeyError:
                 tree.idcache_reserve(new_id)
                 return new_id
-        raise AssertionError()
+        raise AssertionError
 
     @contextlib.contextmanager
     def new_uuid(
@@ -830,7 +830,7 @@ class MelodyLoader:
 
         if self[new_uuid] is None:
             cleanup_after_failure()
-            raise RuntimeError("New UUID was requested but never used")
+            raise RuntimeError("New UUID was requested but never used")  # noqa: TRY003
 
     def xpath(
         self,
@@ -922,7 +922,7 @@ class MelodyLoader:
         elif isinstance(roots, cabc.Iterable):
             roottrees = [(self._find_fragment(r)[0], r) for r in roots]
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "`roots` must be an XML element or a list thereof,"
                 f" not {type(roots).__name__}"
             )
@@ -1154,7 +1154,7 @@ class MelodyLoader:
         try:
             to_uuid = next(iter(to_uuids))
         except StopIteration:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 "to_element does not have a known ID attribute"
             ) from None
         to_uuid = to_element.attrib[to_uuid]
@@ -1228,7 +1228,7 @@ class MelodyLoader:
 
         linkmatch = helpers.CROSS_FRAGMENT_LINK.fullmatch(link)
         if not linkmatch:
-            raise ValueError(f"Malformed link: {link!r}")
+            raise ValueError(f"Malformed link: {link!r}")  # noqa: TRY003
         xtype, fragment, ref = linkmatch.groups()
         del fragment  # TODO use 'fragment' to disambiguate multiple matches
 
@@ -1239,11 +1239,11 @@ class MelodyLoader:
         if not matches:
             raise KeyError(link)
         if len(matches) > 1:
-            raise KeyError(f"Ambiguous reference: {link!r}")
+            raise KeyError(f"Ambiguous reference: {link!r}")  # noqa: TRY003
         if xtype is not None:
             actual_xtype = helpers.xtype_of(matches[0])
             if actual_xtype != xtype:
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Bad XML: Expected a {xtype!r}, got {actual_xtype!r}"
                 )
         return matches[0]
@@ -1303,7 +1303,7 @@ class MelodyLoader:
         for fragment, tree in self.trees.items():
             if tree.root is root:
                 return (fragment, tree)
-        raise ValueError("Element is not contained in any fragment")
+        raise ValueError("Element is not contained in any fragment")  # noqa: TRY003
 
     def _follow_href(self, element: etree._Element) -> etree._Element:
         href = element.get("href")
@@ -1345,10 +1345,10 @@ class MelodyLoader:
             None,
         )
         if afm is None:
-            raise RuntimeError("Cannot find .afm file in primary resource")
+            raise RuntimeError("Cannot find .afm file in primary resource")  # noqa: TRY003
         metadata = next(afm.root.iter(METADATA_TAG), None)
         if metadata is None:
-            raise RuntimeError("Cannot find <Metadata> in primary .afm file")
+            raise RuntimeError("Cannot find <Metadata> in primary .afm file")  # noqa: TRY003
         LOGGER.debug("Found <Metadata> with ID %s", metadata.get("id"))
         return metadata
 
@@ -1369,7 +1369,7 @@ class MelodyLoader:
                 LOGGER.debug("Viewpoint %r v%s already active", name, version)
                 return
 
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Viewpoint {name} already active with version {vpver}"
                 f" (requested: {version})"
             )

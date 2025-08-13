@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import array
-import collections.abc as cabc
 import contextlib
 import errno
 import functools
@@ -37,6 +36,9 @@ from PIL import ImageFont
 import capellambse
 import capellambse._namespaces as _n
 import capellambse.filehandler as fh
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 if sys.platform.startswith("win"):
     import msvcrt
@@ -306,7 +308,7 @@ def load_font(fonttype: str, size: int) -> ImageFont.FreeTypeFont:
     fontfile = imr.files(capellambse).joinpath(FALLBACK_FONT)
     with fontfile.open("rb") as fallback_font:
         te.assert_type(fallback_font, t.IO[bytes])
-        fallback_font = t.cast(t.BinaryIO, fallback_font)
+        fallback_font = t.cast("t.BinaryIO", fallback_font)
         return ImageFont.truetype(fallback_font, size)
 
 
@@ -345,7 +347,7 @@ def extent_func(
 
 def get_text_extent(
     text: str,
-    width: float | int = math.inf,
+    width: float = math.inf,
     fonttype: str = "OpenSans-Regular.ttf",
     fontsize: int = DEFAULT_FONT_SIZE,
 ) -> tuple[float, float]:
@@ -476,17 +478,17 @@ def ssvparse(
         the expected number of values doesn't match the actual number.
     """
     if not string.startswith(parens[0]) or not string.endswith(parens[1]):
-        raise ValueError(f"Missing {parens} around string: {string}")
+        raise ValueError(f"Missing {parens} around string: {string}")  # noqa: TRY003
     string = string[len(parens[0]) : -len(parens[1])]
     values = [cast(v) for v in string.split(sep)]
     if num and len(values) != num:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             f"Expected {num} values, found {len(values)}: {string}"
         )
     return values
 
 
-def word_wrap(text: str, width: float | int) -> list[str]:
+def word_wrap(text: str, width: float) -> list[str]:
     """Perform word wrapping for proportional fonts.
 
     Whitespace at the beginning of input lines is preserved, but other
@@ -506,7 +508,7 @@ def word_wrap(text: str, width: float | int) -> list[str]:
         A list of strings, one for each line, after wrapping.
     """
 
-    def split_into_lines(line: str, width: float | int) -> list[str]:
+    def split_into_lines(line: str, width: float) -> list[str]:
         words = line.split()
         if not words:
             return [line]
@@ -564,18 +566,18 @@ def get_term_cell_size(stream=None) -> tuple[int, int]:
     """
     if stream is None:
         if not sys.stderr.isatty():
-            raise ValueError("No stream given and stderr is not a TTY")
+            raise ValueError("No stream given and stderr is not a TTY")  # noqa: TRY003
         stream = sys.stderr
     elif not stream.isatty():
-        raise ValueError("Passed stream is not a TTY")
+        raise ValueError("Passed stream is not a TTY")  # noqa: TRY003
 
     if sys.platform.startswith("win"):
-        raise ValueError("Not supported on Windows")
+        raise ValueError("Not supported on Windows")  # noqa: TRY003
 
     buf = array.array("H", [0, 0, 0, 0])
     fcntl.ioctl(stream, termios.TIOCGWINSZ, buf)
     if 0 in buf:
-        raise ValueError(f"Received invalid ioctl reply: {buf!r}")
+        raise ValueError(f"Received invalid ioctl reply: {buf!r}")  # noqa: TRY003
     rows, cols, screenwidth, screenheight = buf
     return (screenwidth // cols, screenheight // rows)
 
@@ -808,10 +810,10 @@ def process_html_fragments(
     rawnodes = lxml.html.fragments_fromstring(markup)
     if rawnodes and isinstance(rawnodes[0], str):
         firstnode = html.escape(rawnodes[0])
-        nodes = t.cast(list[etree._Element], rawnodes[1:])
+        nodes = t.cast("list[etree._Element]", rawnodes[1:])
     else:
         firstnode = ""
-        nodes = t.cast(list[etree._Element], rawnodes)
+        nodes = t.cast("list[etree._Element]", rawnodes)
 
     for node in itertools.chain.from_iterable(
         map(operator.methodcaller("iter"), nodes)
@@ -909,9 +911,9 @@ def escape_linked_text(
                 yield html.escape(href[len("hlink://") :])
                 yield '"/>'
             if len(elm) > 0:
-                raise ValueError("Nesting is not allowed in LinkedText")
+                raise ValueError("Nesting is not allowed in LinkedText")  # noqa: TRY003
         else:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Only 'a' tags are allowed in LinkedText, not {elm.tag!r}"
             )
 
@@ -944,15 +946,15 @@ def split_links(links: str) -> cabc.Iterator[str]:
                 part = f"{next_xtype} {part}"
                 next_xtype = ""
             if not CROSS_FRAGMENT_LINK.fullmatch(part):
-                raise ValueError(f"Malformed link definition: {links}")
+                raise ValueError(f"Malformed link definition: {links}")  # noqa: TRY003
             yield part
 
         else:
             if next_xtype:
-                raise ValueError(f"Malformed link definition: {links}")
+                raise ValueError(f"Malformed link definition: {links}")  # noqa: TRY003
             next_xtype = part
     if next_xtype:
-        raise ValueError(f"Malformed link definition: {links}")
+        raise ValueError(f"Malformed link definition: {links}")  # noqa: TRY003
 
 
 @t.overload

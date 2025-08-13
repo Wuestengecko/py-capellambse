@@ -4,16 +4,18 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import contextlib
 import struct
 import typing as t
 
-import lxml.etree
-
 from capellambse import diagram
 
 from ._common import LOGGER
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    import lxml.etree
 
 
 def apply_style_overrides(

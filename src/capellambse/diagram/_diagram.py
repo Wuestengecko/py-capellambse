@@ -23,6 +23,8 @@ import math
 import os
 import typing as t
 
+import typing_extensions as te
+
 from capellambse import diagram, helpers
 
 LOGGER = logging.getLogger(__name__)
@@ -152,9 +154,7 @@ class Box:
         self._parent: Box | None = None
         self.parent = parent
 
-    def create_portlabel(
-        self, labeltext: str, margin: float | int = 2
-    ) -> None:
+    def create_portlabel(self, labeltext: str, margin: float = 2) -> None:
         """Add a label to a port box.
 
         The port that this is called for must be snapped to its parent's
@@ -168,13 +168,13 @@ class Box:
             Space between the label text and the port Box.
         """
         if self.parent is None:
-            raise ValueError("Ports must have a parent")
+            raise ValueError("Ports must have a parent")  # noqa: TRY003
         if (
             self.pos.x > self.parent.pos.x
             and self.pos.x + self.size.x
             < self.parent.pos.x + self.parent.size.x
         ):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 "Ports must be attached to their parents' side to get labels"
             )
 
@@ -206,7 +206,7 @@ class Box:
             return
 
         if not isinstance(self.parent, Box):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Can only snap to parent Boxes,"
                 f" not {type(self.parent).__name__}"
             )
@@ -280,7 +280,7 @@ class Box:
             return self.__vector_snap_manhattan(point, point - source)
         if style is RoutingStyle.TREE:
             return self.__vector_snap_tree(point, point - source)
-        raise ValueError(f"Unsupported routing style: {style}")
+        raise ValueError(f"Unsupported routing style: {style}")  # noqa: TRY003
 
     def __vector_snap_closest(
         self, source: diagram.Vector2D
@@ -396,7 +396,7 @@ class Box:
                 self.pos.y + self.size.y * (axis.y < 0),
             )
 
-        raise AssertionError(f"closestaxis({axis!r}) returned (0,0)")
+        raise AssertionError(f"closestaxis({axis!r}) returned (0,0)")  # noqa: TRY003
 
     def __vector_snap_tree(
         self, point: diagram.Vector2D, direction: diagram.Vector2D
@@ -841,7 +841,7 @@ class Circle:
     def __init__(
         self,
         center: diagram.Vec2ish,
-        radius: float | int,
+        radius: float,
         *,
         uuid: str | None = None,
         styleclass: str | None = None,
@@ -989,7 +989,7 @@ class Diagram:
     def add_element(
         self,
         element: DiagramElement,
-        extend_viewport: bool = True,
+        extend_viewport: bool = True,  # noqa: FBT001, FBT002
         *,
         force: bool = False,
     ) -> None:
@@ -1025,7 +1025,7 @@ class Diagram:
                 )
                 self.__elements.remove(self[element.uuid])
             else:
-                raise ValueError(f"Duplicate element UUID {element.uuid!r}")
+                raise ValueError(f"Duplicate element UUID {element.uuid!r}")  # noqa: TRY003
 
         if extend_viewport:
             self.__extend_viewport(element.bounds)
@@ -1054,7 +1054,7 @@ class Diagram:
 
     def normalize_viewport(
         self,
-        offset: float | int | diagram.Vec2ish = 0,
+        offset: float | diagram.Vec2ish = 0,
     ) -> None:
         """Normalize the viewport.
 
@@ -1122,9 +1122,9 @@ class Diagram:
             for elm in self.__elements:
                 if elm.uuid == key:
                     return elm
-            raise KeyError(f"No element with uuid {key!r} in this diagram")
+            raise KeyError(f"No element with uuid {key!r} in this diagram")  # noqa: TRY003
 
-        raise TypeError(f"Cannot look up elements by {type(key).__name__!s}")
+        raise TypeError(f"Cannot look up elements by {type(key).__name__!s}")  # noqa: TRY003
 
     def __iter__(self) -> cabc.Iterator[DiagramElement]:
         return iter(self.__elements)
@@ -1166,6 +1166,6 @@ class Diagram:
             ]
         )
 
-    def __iadd__(self, element: DiagramElement) -> Diagram:
+    def __iadd__(self, element: DiagramElement) -> te.Self:
         self.add_element(element)
         return self

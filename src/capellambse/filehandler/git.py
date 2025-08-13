@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import errno
 import hashlib
@@ -23,6 +22,9 @@ import weakref
 import capellambse.helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 LOGGER = logging.getLogger(__name__)
 CACHEBASE = pathlib.Path(capellambse.dirs.user_cache_dir, "models")
@@ -193,7 +195,7 @@ class _GitTransaction:
             targetref = self.__resolve_head() or targetref
 
         if _git_object_name.search(targetref):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 "Target ref looks like a git object, use a different"
                 f" remote_branch: {targetref}"
             )
@@ -212,7 +214,7 @@ class _GitTransaction:
             .strip()
         )
         if self.__handler._transaction is not None:
-            raise RuntimeError("Another transaction is already open")
+            raise RuntimeError("Another transaction is already open")  # noqa: TRY003
         self.__handler._transaction = self
 
         return self.__outer_context.__enter__()
@@ -341,7 +343,7 @@ class _GitTransaction:
             if kw == b"tree":
                 return hash.decode("ascii")
 
-        raise AssertionError(f"No 'tree' in commit {self.__old_sha!r}")
+        raise AssertionError(f"No 'tree' in commit {self.__old_sha!r}")  # noqa: TRY003
 
 
 class GitFileHandler(abc.FileHandler):
@@ -409,7 +411,7 @@ class GitFileHandler(abc.FileHandler):
         self.disable_cache = disable_cache
 
         if bool(username) != bool(password):
-            raise TypeError("Either specify username and password or neither")
+            raise TypeError("Either specify username and password or neither")  # noqa: TRY003
 
         self.username = username
         self.password = password
@@ -435,7 +437,7 @@ class GitFileHandler(abc.FileHandler):
         )
         if "w" in mode:
             if self._transaction is None:
-                raise abc.TransactionClosedError(
+                raise abc.TransactionClosedError(  # noqa: TRY003
                     "Writing to git requires a transaction"
                 )
             return _WritableGitFile(self._transaction, self.cache_dir, path)
@@ -703,7 +705,7 @@ class GitFileHandler(abc.FileHandler):
             refname = match.group(1)
             hash = match.group(2)
             return hash, refname
-        raise ValueError("Failed to resolve default branch on remote")
+        raise ValueError("Failed to resolve default branch on remote")  # noqa: TRY003
 
     def __resolve_remote_ref(self, ref: str) -> tuple[str, str]:
         """Resolve the given ``ref`` on the remote."""
@@ -719,14 +721,14 @@ class GitFileHandler(abc.FileHandler):
         assert isinstance(listing, str)
         if not listing:
             if not _git_object_name.search(ref):
-                raise ValueError(f"Ref does not exist on remote: {ref}")
+                raise ValueError(f"Ref does not exist on remote: {ref}")  # noqa: TRY003
             LOGGER.debug("Ref %r not found, assuming object name", ref)
             return ref, ref
         refs = [i.split("\t") for i in listing.strip().split("\n")]
         if len(refs) > 1:
             exact = [i for i in refs if i[1] == ref]
             if len(exact) != 1:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"Ambiguous ref name {ref}, found {len(refs)}:"
                     f" {', '.join(i[1] for i in refs)}"
                 )

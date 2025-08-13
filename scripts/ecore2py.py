@@ -159,13 +159,20 @@ def main(
         )
         # fmt: on
 
-        write_enums(f, enums, docstrings)
-        write_classes(f, location, classes, docstrings, namespaces_module)
+        write_enums(f, enums, docstrings=docstrings)
+        write_classes(
+            f,
+            location,
+            classes,
+            docstrings=docstrings,
+            nsmodule=namespaces_module,
+        )
 
 
 def write_enums(
     f: t.IO[str],
     enums: list[EnumDef],
+    *,
     docstrings: bool,
 ) -> None:
     for enumdef in sorted(enums, key=operator.attrgetter("name")):
@@ -186,6 +193,7 @@ def write_classes(
     f: t.IO[str],
     location: str,
     classes: collections.deque[ClassDef],
+    *,
     docstrings: bool,
     nsmodule: bool,
 ) -> None:
@@ -252,9 +260,7 @@ def write_class(
         elif isinstance(member, RelationshipMember):
             write_relationship(f, member, nsmodule=nsmodule)
         else:
-            raise AssertionError(
-                f"Unhandled member type {type(member).__name__}"
-            )
+            raise TypeError(f"Unhandled member type {type(member).__name__}")
         if docstrings and member.docstring:
             writedoc(f, member.docstring, 1)
 
@@ -276,7 +282,7 @@ def write_relationship(
     else:
         f.write(f"m.{member_type}[{member.cls!r}](")
 
-    clsname = clsname2tuplestring(member.cls, nsmodule)
+    clsname = clsname2tuplestring(member.cls, nsmodule=nsmodule)
     match member.type:
         case RelationshipType.Containment:
             f.write(f"{member.xmlname!r}, {clsname}")
@@ -523,7 +529,7 @@ def fname2modname(fname: str) -> str:
     return fname.rpartition("/")[2].removesuffix(".ecore").lower()
 
 
-def clsname2tuplestring(clsname: str, nsmodule: bool) -> str:
+def clsname2tuplestring(clsname: str, *, nsmodule: bool) -> str:
     if "." in clsname:
         module, clsname = clsname.rsplit(".", 1)
         if nsmodule:

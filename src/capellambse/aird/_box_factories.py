@@ -14,7 +14,7 @@ import markupsafe
 
 from capellambse import diagram, helpers
 
-from . import _common as C
+from . import _common as c
 from . import _filters, _styling
 
 _T = t.TypeVar("_T", bound=diagram.Box)
@@ -25,21 +25,19 @@ _DROP_SHADOW_SIZE: t.Final = 2
 
 @t.overload
 def generic_factory(
-    seb: C.SemanticElementBuilder, *, minsize: diagram.Vector2D = ...
+    seb: c.SemanticElementBuilder, *, minsize: diagram.Vector2D = ...
 ) -> diagram.Box: ...
 @t.overload
 def generic_factory(
-    seb: C.SemanticElementBuilder,
+    seb: c.SemanticElementBuilder,
     *,
     boxtype: type[_T] | functools.partial[_T],
     minsize: diagram.Vector2D = ...,
 ) -> _T: ...
 def generic_factory(
-    seb: C.SemanticElementBuilder,
+    seb: c.SemanticElementBuilder,
     *,
-    boxtype: (
-        type[diagram.Box] | type[_T] | functools.partial[_T]
-    ) = diagram.Box,
+    boxtype: type[diagram.Box | _T] | functools.partial[_T] = diagram.Box,
     minsize: diagram.Vector2D = _MIN_SIZE,
 ) -> _T:
     """Construct a Box from the diagram XML."""
@@ -59,34 +57,34 @@ def generic_factory(
             parent = seb.target_diagram[parent_uid]
             refpos = parent.bounds.pos
         except KeyError:
-            C.LOGGER.error(
+            c.LOGGER.error(
                 "Parent not in diagram, cannot draw box with uid %r",
                 seb.data_element.attrib["element"],
             )
-            raise C.SkipObject() from None
+            raise c.SkipObject from None
     assert parent is None or isinstance(parent, diagram.Box)
 
     try:
         layout = next(seb.data_element.iterchildren("layoutConstraint")).attrib
         ostyle = next(seb.diag_element.iterchildren("ownedStyle"))
     except StopIteration:
-        C.LOGGER.error(
+        c.LOGGER.error(
             "Cannot find style or layout for %r",
             seb.data_element.attrib["element"],
         )
-        raise C.SkipObject() from None
+        raise c.SkipObject from None
 
     box_is_port = seb.diag_element.tag == "ownedBorderedNodes"
     box_is_symbol = ostyle.get("workspacePath") is not None
 
     pos = refpos + (int(layout.get("x", 0)), int(layout.get("y", 0)))
     if box_is_port:
-        size = C.PORT_SIZE
+        size = c.PORT_SIZE
     else:
         size = diagram.Vector2D(
             int(layout.get("width", 0)), int(layout.get("height", 0))
         )
-        style_type = ostyle.attrib[C.ATT_XMT].split(":")[-1]
+        style_type = ostyle.attrib[c.ATT_XMT].split(":")[-1]
         if style_type == "FlatContainerStyle":
             # Remove drop shadows
             size -= (
@@ -136,10 +134,10 @@ def generic_factory(
         box.minsize = (30, 30)
     _filters.setfilters(seb, box)
     box.parent = parent
-    return t.cast(_T, box)
+    return t.cast("_T", box)
 
 
-def generic_stacked_factory(seb: C.SemanticElementBuilder) -> C.StackingBox:
+def generic_stacked_factory(seb: c.SemanticElementBuilder) -> c.StackingBox:
     """Construct a Box whose children stack."""
     child_layout = (
         seb.diag_element.get("childrenPresentation") or "VerticalStack"
@@ -147,12 +145,12 @@ def generic_stacked_factory(seb: C.SemanticElementBuilder) -> C.StackingBox:
     return generic_factory(
         seb,
         boxtype=functools.partial(
-            C.StackingBox, features=[], stacking_mode=child_layout
+            c.StackingBox, features=[], stacking_mode=child_layout
         ),
     )
 
 
-def class_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def class_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create a Class.
 
     Classes contain multiple `Property` sub-elements. These aren't
@@ -167,7 +165,7 @@ def class_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     features = collections.defaultdict[str, list[str]](list)
     for feature in seb.melodyobjs[0].iterchildren("ownedFeatures"):
         feat_name = feature.attrib["name"]
-        feat_type = feature.attrib[C.ATT_XST].split(":")[-1]
+        feat_type = feature.attrib[c.ATT_XST].split(":")[-1]
 
         abstract_type_link = feature.get("abstractType")
         if abstract_type_link is not None:
@@ -192,9 +190,9 @@ def class_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
             throw = []
 
             for param in feature.iterchildren("ownedParameters"):
-                param_type = param.attrib[C.ATT_XST].split(":")[-1]
+                param_type = param.attrib[c.ATT_XST].split(":")[-1]
                 if param_type != "Parameter":
-                    C.LOGGER.warning(
+                    c.LOGGER.warning(
                         "Unknown parameter type %r for service %r",
                         param_type,
                         feat_name,
@@ -223,14 +221,14 @@ def class_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
             if throw:
                 feat_name += f" throws {', '.join(throw)}"
         else:
-            C.LOGGER.warning("Unknown feature type %r", feat_type)
+            c.LOGGER.warning("Unknown feature type %r", feat_type)
         features[feat_type].append(feat_name)
 
     box.features = sum(features.values(), list[str]())
     return box
 
 
-def component_port_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def component_port_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     box = generic_factory(seb)
     try:
         box.styleclass = "CP_" + (seb.melodyobjs[0].attrib["orientation"])
@@ -240,7 +238,7 @@ def component_port_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     return box
 
 
-def constraint_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def constraint_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create the box for a Constraint.
 
     Constraints are comprised of two parts: A Box and some Edges. The
@@ -253,7 +251,7 @@ def constraint_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
         The accompanying edge factory.
     """
     box = generic_factory(seb)
-    label = C.get_spec_text(seb) or seb.melodyobjs[0].attrib.get("name", "")
+    label = c.get_spec_text(seb) or seb.melodyobjs[0].attrib.get("name", "")
     if isinstance(label, markupsafe.Markup):
         box.label = label.striptags()
     else:
@@ -261,15 +259,15 @@ def constraint_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     return box
 
 
-def control_node_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def control_node_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     r"""Differentiate ``ControlNode``\ s based on their KIND."""
     assert seb.styleclass is not None
     kind = seb.melodyobjs[0].get("kind", "OR")
-    seb.styleclass = "".join((kind.capitalize(), seb.styleclass))
+    seb.styleclass = f"{kind.capitalize()}{seb.styleclass}"
     return generic_factory(seb)
 
 
-def enumeration_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def enumeration_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create an Enumeration.
 
     These work similar to Classes, but use different element tags.
@@ -278,9 +276,9 @@ def enumeration_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     box.features = []
 
     for lit_elm in seb.melodyobjs[0].iterchildren("ownedLiterals"):
-        lit_type = lit_elm.attrib[C.ATT_XST]
+        lit_type = lit_elm.attrib[c.ATT_XST]
         if lit_type.split(":")[-1] != "EnumerationLiteral":
-            C.LOGGER.warning(
+            c.LOGGER.warning(
                 "Unknown enumeration literal type %r, skipping", lit_type
             )
             continue
@@ -289,9 +287,9 @@ def enumeration_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     return box
 
 
-def part_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def part_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Resolve the ``Part`` meta-styleclass and creates its Box."""
-    dgel_type = seb.diag_element.attrib[C.ATT_XMT]
+    dgel_type = seb.diag_element.attrib[c.ATT_XMT]
     if dgel_type in {"diagram:DNodeContainer", "diagram:DNode"}:
         # resolve abstractType reference
         abstract_obj = seb.melodyobjs[0]
@@ -301,7 +299,7 @@ def part_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
                 seb.melodyobjs[0], abstract_type
             )
 
-        seb.styleclass = abstract_obj.attrib[C.ATT_XST].split(":")[-1]
+        seb.styleclass = abstract_obj.attrib[c.ATT_XST].split(":")[-1]
         assert seb.styleclass is not None
         if seb.styleclass.startswith("Physical"):
             seb.styleclass = "".join(
@@ -325,11 +323,11 @@ def part_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
 
         return generic_factory(seb)
 
-    C.LOGGER.error("Unhandled Part type: %r; skipping", dgel_type)
-    raise C.SkipObject()
+    c.LOGGER.error("Unhandled Part type: %r; skipping", dgel_type)
+    raise c.SkipObject
 
 
-def requirements_box_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def requirements_box_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create a Requirement.
 
     Requirements' text is split in two parts, which have to be joined
@@ -338,13 +336,13 @@ def requirements_box_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     # Only handle the top-level <ownedDiagramElements>,
     # not the nested <ownedElements>.
     if seb.diag_element.tag != "ownedDiagramElements":
-        raise C.SkipObject()
+        raise c.SkipObject
 
     try:
         targetlink = next(seb.diag_element.iterchildren("target"))
         targethref = targetlink.attrib["href"]
     except (StopIteration, KeyError):
-        raise C.SkipObject() from None
+        raise c.SkipObject from None
 
     seb.melodyobjs[0] = seb.melodyloader.follow_link(targetlink, targethref)
     text = [
@@ -359,11 +357,11 @@ def requirements_box_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     box.features = [f"- {i}" for i in text if i is not None]
     if not (box.floating_labels or box.features):
         sdata_element = seb.data_element.attrib["element"]
-        raise ValueError(f"Requirements text is empty for {sdata_element!r}")
+        raise ValueError(f"Requirements text is empty for {sdata_element!r}")  # noqa: TRY003
     return box
 
 
-def region_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def region_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     r"""Perform special handling for ``Region``\ s.
 
     *   Adjust the styleclass of Regions to ``StateRegion`` or
@@ -386,11 +384,14 @@ def region_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
         box.label = f"[{box.label}]"
 
     box.minsize = (27, 21)
-    box.size = diagram.Vector2D(box._size.x or 55, box._size.y or 41)
+    box.size = diagram.Vector2D(
+        box._size.x or 55,  # noqa: SLF001
+        box._size.y or 41,  # noqa: SLF001
+    )
     return box
 
 
-def statemode_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def statemode_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create a State or Mode.
 
     Unlike other elements, these have their immediate children rendered
@@ -400,16 +401,16 @@ def statemode_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     Additionally, States and Modes can have associated activities. These
     are displayed after the label, separated by a horizontal line.
     """
-    xmt = seb.diag_element.get(C.ATT_XMT)
+    xmt = seb.diag_element.get(c.ATT_XMT)
     if xmt == "diagram:DNodeContainer":
         return generic_stacked_factory(seb)
     if xmt == "diagram:DNodeList":
         return statemode_activities_factory(seb)
-    C.LOGGER.warning("Unknown State/Mode xmi:type %r", xmt)
-    raise C.SkipObject()
+    c.LOGGER.warning("Unknown State/Mode xmi:type %r", xmt)
+    raise c.SkipObject
 
 
-def statemode_activities_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def statemode_activities_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Attach the activities to a State or Mode as features."""
     parent_elm = seb.diag_element.getparent()
     assert parent_elm is not None
@@ -417,13 +418,13 @@ def statemode_activities_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     try:
         parent = seb.target_diagram[parent_id]
     except KeyError:
-        C.LOGGER.error("Cannot find a box with UID %r in diagram", parent_id)
-        raise C.SkipObject() from None
+        c.LOGGER.error("Cannot find a box with UID %r in diagram", parent_id)
+        raise c.SkipObject from None
     assert isinstance(parent, diagram.Box)
 
-    entry: list[str] = []
-    do: list[str] = []
-    exit: list[str] = []
+    entry_acts: list[str] = []
+    do_acts: list[str] = []
+    exit_acts: list[str] = []
     for elm in seb.diag_element.iterchildren("ownedElements"):
         elm_id = elm.get("uid")
         try:
@@ -431,7 +432,7 @@ def statemode_activities_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
             target = seb.melodyloader[target_id]
             mapping_id = next(elm.iterchildren("actualMapping")).attrib["href"]
         except (KeyError, StopIteration):
-            C.LOGGER.error("No usable target or mapping for %r", elm_id)
+            c.LOGGER.error("No usable target or mapping for %r", elm_id)
             continue
 
         mapping = re.search(
@@ -442,26 +443,26 @@ def statemode_activities_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
             mapping_name = mapping.group("n")
         try:
             act_list = {
-                "MSM_DoActivity": do,
-                "MSM_Entry": entry,
-                "MSM_Exit": exit,
+                "MSM_DoActivity": do_acts,
+                "MSM_Entry": entry_acts,
+                "MSM_Exit": exit_acts,
             }[mapping_name]
         except KeyError:
-            C.LOGGER.error("Unknown activity mapping type %r", mapping_name)
+            c.LOGGER.error("Unknown activity mapping type %r", mapping_name)
             continue
         act_list.append(target.attrib["name"])
 
     parent.features = list(
         itertools.chain(
-            (f" entry / {i}" for i in entry),
-            (f" do / {i}" for i in do),
-            (f" exit / {i}" for i in exit),
+            (f" entry / {i}" for i in entry_acts),
+            (f" do / {i}" for i in do_acts),
+            (f" exit / {i}" for i in exit_acts),
         )
     )
-    raise C.SkipObject()
+    raise c.SkipObject
 
 
-def fcif_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def fcif_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create a FunctionalChainInvolvementFunction.
 
     These are special boxes that point to another element via their
@@ -481,7 +482,7 @@ def fcif_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
     return generic_factory(seb)
 
 
-def pseudo_symbol_factory(seb: C.SemanticElementBuilder) -> diagram.Box:
+def pseudo_symbol_factory(seb: c.SemanticElementBuilder) -> diagram.Box:
     """Create a [Fork|Choice]PseudoState.
 
     These are boxes that behave like symbols. Capella doesn't store the
@@ -499,7 +500,7 @@ def _make_portlabel(
     ppos: diagram.Vector2D,
     psize: diagram.Vector2D,
     text: str,
-    seb: C.SemanticElementBuilder,
+    seb: c.SemanticElementBuilder,
 ) -> diagram.Box:
     snapsides = {"5001": (1, 0), "5010": (0, 1)}
     try:
@@ -511,7 +512,7 @@ def _make_portlabel(
         loc_elm = next(
             i
             for i in child_elm.iterchildren("layoutConstraint")
-            if i.get(C.ATT_XMT) == "notation:Location"
+            if i.get(c.ATT_XMT) == "notation:Location"
         )
     except StopIteration:
         snapside = diagram.Vector2D(1, 0)
@@ -533,7 +534,7 @@ def _make_free_floating_label(
     ppos: diagram.Vector2D,
     psize: diagram.Vector2D,
     text: str,
-    seb: C.SemanticElementBuilder,
+    seb: c.SemanticElementBuilder,
 ) -> diagram.Box:
     """Try to construct the label from the real location found in aird file."""
     try:
@@ -545,7 +546,7 @@ def _make_free_floating_label(
         loc_elm = next(
             i
             for i in child_elm.iterchildren("layoutConstraint")
-            if i.get(C.ATT_XMT) == "notation:Location"
+            if i.get(c.ATT_XMT) == "notation:Location"
         )
     except StopIteration:
         return _make_snapped_floating_label(
@@ -562,13 +563,13 @@ def _make_snapped_floating_label(
     snapside: diagram.Vector2D,
 ) -> diagram.Box:
     if not isinstance(snapside.x, int) or not isinstance(snapside.y, int):
-        raise TypeError("snapside must be an int-vector")
+        raise TypeError("snapside must be an int-vector")  # noqa: TRY003
     if not (-1 <= snapside.x <= 1 and -1 <= snapside.y <= 1):
-        raise ValueError("snapside values must be in interval [-1, 1]")
+        raise ValueError("snapside values must be in interval [-1, 1]")  # noqa: TRY003
     if snapside.x and snapside.y:
-        raise ValueError("snapside can only have one non-zero value")
+        raise ValueError("snapside can only have one non-zero value")  # noqa: TRY003
     if snapside.x == snapside.y == 0:
-        raise ValueError("snapside must have one non-zero value")
+        raise ValueError("snapside must have one non-zero value")  # noqa: TRY003
     labelbox = diagram.Box(
         (0, 0), (0, 0), label=text, styleclass="BoxAnnotation"
     )
@@ -588,7 +589,7 @@ def _make_snapped_floating_label(
     return labelbox
 
 
-def _is_collapsed(seb: C.SemanticElementBuilder) -> bool:
+def _is_collapsed(seb: c.SemanticElementBuilder) -> bool:
     for data_container in seb.data_element.iterchildren():
         if data_container.get("type") == "7002":
             break
@@ -596,7 +597,7 @@ def _is_collapsed(seb: C.SemanticElementBuilder) -> bool:
         return False
 
     for collapsed_container in data_container.iterchildren():
-        if collapsed_container.get(C.ATT_XMT) == "notation:DrawerStyle":
+        if collapsed_container.get(c.ATT_XMT) == "notation:DrawerStyle":
             break
     else:
         return False

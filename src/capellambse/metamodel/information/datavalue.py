@@ -88,7 +88,7 @@ class DataValue(
             " use a concrete 'Literal*Value' class instead"
         )
         def value(self):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} does not have a '.value',"
                 " use a concrete 'Literal*Value' class instead"
             )
@@ -262,7 +262,7 @@ class OpaqueExpression(
 
     def __getitem__(self, k: str, /) -> str:
         if len(self.bodies) != len(self.languages):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot map: 'languages' and 'bodies' have different sizes"
             )
 
@@ -278,7 +278,7 @@ class OpaqueExpression(
 
     def __setitem__(self, k: str, v: str, /) -> None:
         if len(self.bodies) != len(self.languages):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot map: 'languages' and 'bodies' have different sizes"
             )
 
@@ -295,7 +295,7 @@ class OpaqueExpression(
 
     def __delitem__(self, k: str, /) -> None:
         if len(self.bodies) != len(self.languages):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot map: 'languages' and 'bodies' have different sizes"
             )
 
@@ -310,7 +310,7 @@ class OpaqueExpression(
 
     def __iter__(self) -> cabc.Iterator[str]:
         if len(self.bodies) != len(self.languages):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot map: 'languages' and 'bodies' have different sizes"
             )
 
@@ -319,7 +319,7 @@ class OpaqueExpression(
     def __len__(self) -> int:
         blen = len(self.bodies)
         if blen != len(self.languages):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot map: 'languages' and 'bodies' have different sizes"
             )
 
