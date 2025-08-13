@@ -95,7 +95,7 @@ def get_svg_symbol(
     try:
         factory_def = _FACTORIES[f"{styleclass}Symbol"]
     except KeyError:
-        raise ValueError(f"No icon for type {styleclass}") from None
+        raise ValueError(f"No icon for type {styleclass}") from None  # noqa: TRY003
     return (factory_def.function(), factory_def.dependencies)
 
 
@@ -1264,11 +1264,11 @@ def _make_lgradient(
     stop_opacity=(1, 1),
 ) -> gradients.LinearGradient:
     if len(start) != 2 or len(end) != 2:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "Exactly two values each for start and end are needed"
         )
     if len(stop_colors) != len(stop_opacity):
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "stop_colors and stop_opacity must have the same lengths"
             f" (len(stop_colors) = {len(stop_colors)},"
             f" len(stop_opacity) = {len(stop_opacity)})"
@@ -1295,7 +1295,7 @@ def _make_rgradient(
     offsets=("0", "1"),
 ) -> gradients.RadialGradient:
     if len(stop_colors) != len(offsets):
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "stop_colors and offsets must have the same lengths"
             f" (len(stop_colors) = {len(stop_colors)},"
             f" len(stop_opacity) = {len(offsets)})"

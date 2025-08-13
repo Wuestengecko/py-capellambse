@@ -268,6 +268,7 @@ line-length = 79
 
 [tool.ruff.lint]
 extend-select = [
+  "A",      # flake8-builtins
   "ARG",    # flake8-unused-arguments
   "ASYNC",  # flake8-async
   "B",      # flake8-bugbear
@@ -282,6 +283,7 @@ extend-select = [
   "ERA",    # eradicate
   "F",      # pyflakes
   "FA",     # flake8-future-annotations
+  "FBT",    # flake8-boolean-trap
   "FIX",    # flake8-fixme
   "FLY",    # flynt
   "FURB",   # refurb
@@ -291,6 +293,9 @@ extend-select = [
   "ISC001", # "Implicitly concatenated string literals on one line"
   "ISC003", # "Explicitly concatenated string should be implicitly concatenated"
   "LOG",    # flake8-logging
+  "N",      # pep8-naming
+  "NPY",    # NumPy-specific rules
+  "PD",     # pandas-vet
   "PERF",   # perflint
   "PGH",    # pygrep-hooks
   "PIE",    # flake8-pie
@@ -298,12 +303,16 @@ extend-select = [
   "PT",     # flake8-pytest-style
   "PYI",    # flake8-pyi
   "RET",    # flake8-return
+  "RSE",    # flake8-raise
   "RUF",    # ruff
   "SIM",    # flake8-simplify
+  "SLF",    # flake8-self
   "SLOT",   # flake8-slots
   "T10",    # flake8-debugger
   "T20",    # flake8-print
   "TC",     # flake8-type-checking
+  "TID",    # flake8-tidy-imports
+  "TRY",    # tryceratops
   "UP",     # pyupgrade
   "W",      # pycodestyle
   "YTT",    # flake8-2020
@@ -346,26 +355,41 @@ ignore = [
   "F811",    # Redefinition of unused `_` from line _
   "PGH003",  # Use specific rule codes when ignoring type issues
   "PLR2004", # Magic value used in comparison, consider replacing `_` with a constant variable
+  "N802",    # Function name should be lower-case
 ]
 
 # Jupyter notebooks and CLI scripts
 "*.ipynb" = [
   "ERA001", # commented-out code # used to showcase alternatives to the executed code
-  "FIX",    # flake8-fixme
+  "FIX",
   "T201",   # print used
+  "TRY003", # Avoid specifying long messages outside the exception class # used in scripts to display errors to the user
 ]
 "src/capellambse/_diagram_cache.py" = [
-  "T201", # print used
+  "T201",   # print used
+  "TRY003", # Avoid specifying long messages outside the exception class # used in scripts to display errors to the user
 ]
 "src/capellambse/_scripts/*.py" = [
-  "T201", # print used
+  "T201",   # print used
+  "TRY003", # Avoid specifying long messages outside the exception class # used in scripts to display errors to the user
 ]
 "scripts/*.py" = [
-  "T201", # print used
+  "T201",   # print used
+  "TRY003", # Avoid specifying long messages outside the exception class # used in scripts to display errors to the user
 ]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["capellambse.diagram.Vector2D"]
+
+[tool.ruff.lint.flake8-self]
+extend-ignore-names = [
+  "_element",
+  "_loader",
+  "_model",
+  "_Comment",
+  "_Element",
+  "_ProcessingInstruction",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

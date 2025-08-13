@@ -68,7 +68,7 @@ class SystemEngineering(capellacore.AbstractModellingStructure, ModelRoot):
                 if isinstance(i, oa.OperationalAnalysis)
             )
         except StopIteration:
-            raise AttributeError(
+            raise AttributeError(  # noqa: TRY003
                 f"OperationalAnalysis not found on {self._short_repr_()}"
             ) from None
 
@@ -83,7 +83,7 @@ class SystemEngineering(capellacore.AbstractModellingStructure, ModelRoot):
                 if isinstance(i, sa.SystemAnalysis)
             )
         except StopIteration:
-            raise AttributeError(
+            raise AttributeError(  # noqa: TRY003
                 f"SystemAnalysis not found on {self._short_repr_()}"
             ) from None
 
@@ -98,7 +98,7 @@ class SystemEngineering(capellacore.AbstractModellingStructure, ModelRoot):
                 if isinstance(i, la.LogicalArchitecture)
             )
         except StopIteration:
-            raise AttributeError(
+            raise AttributeError(  # noqa: TRY003
                 f"LogicalArchitecture not found on {self._short_repr_()}"
             ) from None
 
@@ -113,7 +113,7 @@ class SystemEngineering(capellacore.AbstractModellingStructure, ModelRoot):
                 if isinstance(i, pa.PhysicalArchitecture)
             )
         except StopIteration:
-            raise AttributeError(
+            raise AttributeError(  # noqa: TRY003
                 f"PhysicalArchitecture not found on {self._short_repr_()}"
             ) from None
 
@@ -128,7 +128,7 @@ class SystemEngineering(capellacore.AbstractModellingStructure, ModelRoot):
                 if isinstance(i, epbs.EPBSArchitecture)
             )
         except StopIteration:
-            raise AttributeError(
+            raise AttributeError(  # noqa: TRY003
                 f"EPBSArchitecture not found on {self._short_repr_()}"
             ) from None
 

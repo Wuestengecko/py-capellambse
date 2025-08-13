@@ -60,11 +60,11 @@ VIEWPOINT_ORDER = (
 )
 
 
-class _NoBoundingBoxFound(Exception):
+class _NoBoundingBoxFound(Exception):  # noqa: N818 # not an error
     pass
 
 
-class _NoExtentsFound(Exception):
+class _NoExtentsFound(Exception):  # noqa: N818 # not an error
     pass
 
 
@@ -101,7 +101,7 @@ def export(
     capella: str,
     model: capellambse.MelodyModel,
     *,
-    format: str,
+    format: str,  # noqa: A002
     index: bool,
     force: t.Literal["exe", "docker"] | None,
     background: bool,
@@ -114,7 +114,7 @@ def export(
             "Diagram cache updates are only supported for local paths"
         )
 
-    format = format.lower()
+    format = format.lower()  # noqa: A001
     if format not in VALID_FORMATS:
         supported = ", ".join(sorted(VALID_FORMATS))
         raise ValueError(
@@ -151,7 +151,7 @@ def export(
             cli.workspace / "main_model" / "output",
             diag_cache_dir,
             format,
-            background,
+            background=background,
         )
         if index:
             _write_index(model, format, diag_cache_dir, diagrams)
@@ -187,6 +187,7 @@ def _copy_images(
     srcdir: pathlib.Path,
     destdir: pathlib.Path,
     extension: str,
+    *,
     background: bool,
 ) -> list[IndexEntry]:
     name_counts = collections.defaultdict[str, int](lambda: -1)
@@ -217,7 +218,9 @@ def _copy_images(
             source = srcdir / files[name]
             destination = destdir / f"{i.uuid}.{extension}"
             if extension == "svg":
-                _copy_and_postprocess_svg(source, destination, background)
+                _copy_and_postprocess_svg(
+                    source, destination, background=background
+                )
             else:
                 shutil.copyfile(source, destination)
 
@@ -305,7 +308,7 @@ def _rect_extents(element: etree._Element) -> Extents:
         width = float(width_str)
         height = float(height_str)
     except ValueError:
-        raise _NoExtentsFound() from None
+        raise _NoExtentsFound from None
     x = float(element.get("x", 0))
     y = float(element.get("y", 0))
     width = float(element.get("width", 0))
@@ -381,7 +384,7 @@ def _calculate_svg_viewbox(root: etree._Element) -> ViewBox:
     x_max += CROP_MARGIN
     y_max += CROP_MARGIN
     if any(abs(i) == float("inf") for i in (x_min, x_max, y_min, y_max)):
-        raise _NoBoundingBoxFound() from None
+        raise _NoBoundingBoxFound from None
     return ViewBox(x_min, y_min, x_max - x_min, y_max - y_min)
 
 
@@ -430,7 +433,7 @@ def _crop_svg_viewbox(src: pathlib.Path, root: etree._Element):
 
 
 def _copy_and_postprocess_svg(
-    src: pathlib.Path, dest: pathlib.Path, background: bool
+    src: pathlib.Path, dest: pathlib.Path, *, background: bool
 ) -> None:
     """Copy ``src`` to ``dest`` and post process SVG diagram.
 

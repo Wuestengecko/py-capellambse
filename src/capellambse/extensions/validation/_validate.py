@@ -101,7 +101,7 @@ class _VirtualTypesRegistry(cabc.Mapping[str, VirtualType | RealType]):
         except KeyError:
             pass
         else:
-            raise RuntimeError(f"Virtual type already known: {known}")
+            raise RuntimeError(f"Virtual type already known: {known}")  # noqa: TRY003
         self.__registry[vtype.name] = vtype
 
 
@@ -323,7 +323,7 @@ class Results:
     def by_class(self, /, *types: str) -> Results:
         """Filter the validation results by target object type."""
         if not types:
-            raise TypeError("Results.by_class requires at least one argument")
+            raise TypeError("Results.by_class requires at least one argument")  # noqa: TRY003
         typeobjs = [_types_registry[i] for i in types]
         return Results(
             ((rule_, objid), result)
@@ -378,10 +378,10 @@ def rule(
         the rule to pass.
     """
     if id in _VALIDATION_RULES:
-        raise ValueError(f"Duplicate rule ID: {id}")
+        raise ValueError(f"Duplicate rule ID: {id}")  # noqa: TRY003
 
     if not types:
-        raise TypeError("No 'types' specified")
+        raise TypeError("No 'types' specified")  # noqa: TRY003
     if isinstance(types, type):
         type_names = [types.__name__]
     elif isinstance(types, RealType | VirtualType):
@@ -459,7 +459,7 @@ class ObjectValidation:
 
     def __init__(self, **kw: t.Any) -> None:
         del kw
-        raise TypeError("Cannot create Validation object this way")
+        raise TypeError("Cannot create Validation object this way")  # noqa: TRY003
 
     @classmethod
     def from_model(
@@ -515,7 +515,7 @@ class ElementValidation(ObjectValidation):
             obj = self.parent
             return [i for i in _VALIDATION_RULES.values() if i.applies_to(obj)]
         except AttributeError as err:
-            raise RuntimeError("Cannot compute applicable rules") from err
+            raise RuntimeError("Cannot compute applicable rules") from err  # noqa: TRY003
 
     def validate(self) -> Results:
         """Validate this element against the rules that apply to it."""

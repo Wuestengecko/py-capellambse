@@ -349,7 +349,7 @@ class EnumerationValueAttribute(Attribute):
     def value(self):
         vals = self.values
         if len(vals) > 1:
-            raise TypeError("Multi-value enumeration, use `.values` instead")
+            raise TypeError("Multi-value enumeration, use `.values` instead")  # noqa: TRY003
         if len(vals) == 1:
             return vals[0]
         return None

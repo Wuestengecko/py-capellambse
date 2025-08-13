@@ -267,7 +267,7 @@ class RequirementsRelationAccessor(
         )
 
         if "target" not in kw:
-            raise m.InvalidModificationError(
+            raise m.InvalidModificationError(  # noqa: TRY003
                 "No `target` for new requirement relation"
             )
         cls = self._find_relation_type(kw["target"])
@@ -301,7 +301,7 @@ class RequirementsRelationAccessor(
                 obj.parent._element.remove(relation)
                 break
         else:
-            raise ValueError("Cannot delete: Target object not in this list")
+            raise ValueError("Cannot delete: Target object not in this list")  # noqa: TRY003
 
     def insert(
         self,
@@ -325,7 +325,7 @@ class RequirementsRelationAccessor(
 
         if isinstance(value, CapellaOutgoingRelation):
             if not value.target:
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY003
                     "Cannot insert outgoing relation without target:"
                     f" {value._short_repr_()}"
                 )
@@ -360,7 +360,7 @@ class RequirementsRelationAccessor(
         if isinstance(target, requirements.Requirement):
             return requirements.InternalRelation
         if isinstance(target, requirements.ReqIFElement):
-            raise m.InvalidModificationError(
+            raise m.InvalidModificationError(  # noqa: TRY003
                 "Cannot create relations to targets of type"
                 f" {type(target).__name__}"
             )

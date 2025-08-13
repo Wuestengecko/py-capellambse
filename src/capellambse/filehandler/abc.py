@@ -189,7 +189,7 @@ class FileHandler(metaclass=abc.ABCMeta):
     @property
     def rootdir(self) -> AbstractFilePath[te.Self]:  # pragma: no cover
         """The root directory of the file handler."""
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             f"{type(self).__name__} does not support listing files"
         )
 
@@ -209,7 +209,7 @@ class FileHandler(metaclass=abc.ABCMeta):
             ``subdir``).
         """
         del path
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             f"{type(self).__name__} does not support listing files"
         )
 
@@ -217,7 +217,7 @@ class FileHandler(metaclass=abc.ABCMeta):
         try:
             fpath = self.rootdir.joinpath(path)
         except TypeError:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} does not support is_dir()"
             ) from None
 
@@ -227,7 +227,7 @@ class FileHandler(metaclass=abc.ABCMeta):
         try:
             fpath = self.rootdir.joinpath(path)
         except TypeError:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} does not support is_file()"
             ) from None
 
@@ -256,7 +256,7 @@ class FilePath(os.PathLike[str], ira.Traversable, t.Generic[_F]):
             type(self).is_file is FilePath.is_file
             and ptype.is_file is FileHandler.is_file
         ):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{ptype.__name__} does not support FilePath:"
                 f" is_dir and is_file must both be implemented,"
                 " either on the FileHandler or a FilePath subclass"
@@ -264,7 +264,7 @@ class FilePath(os.PathLike[str], ira.Traversable, t.Generic[_F]):
 
         for method in ("iterdir", "rootdir"):
             if getattr(ptype, method) is getattr(FileHandler, method):
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"{ptype.__name__} does not support FilePath:"
                     f" {ptype.__name__}.{method} is not implemented"
                 )
@@ -334,18 +334,18 @@ class FilePath(os.PathLike[str], ira.Traversable, t.Generic[_F]):
         del buffering, errors
 
         if "b" not in mode:
-            raise ValueError("Only binary mode is supported")
+            raise ValueError("Only binary mode is supported")  # noqa: TRY003
         if "r" in mode:
             mode = "rb"
         elif "w" in mode:
             mode = "wb"
         else:
-            raise ValueError(f"Unsupported mode: {mode!r}")
+            raise ValueError(f"Unsupported mode: {mode!r}")  # noqa: TRY003
 
         if encoding is not None:
-            raise ValueError("Encoding is not supported")
+            raise ValueError("Encoding is not supported")  # noqa: TRY003
         if newline is not None:
-            raise ValueError("Newline is not supported")
+            raise ValueError("Newline is not supported")  # noqa: TRY003
 
         return self._parent.open(self._path, mode)
 

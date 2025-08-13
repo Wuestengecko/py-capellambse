@@ -103,7 +103,7 @@ def native_capella(
             docker = docker.replace("{VERSION}", model.info.capella_version)
             runner = _DockerRunner(docker)
         else:
-            raise TypeError("No native Capella runner specified")
+            raise TypeError("No native Capella runner specified")  # noqa: TRY003
 
         yield _NativeCapella(workspace, runner)
 
@@ -119,7 +119,7 @@ class _NativeCapella:
         try:
             return self.__runner(self.workspace, *args)
         except subprocess.CalledProcessError as err:
-            _LOGGER.error(
+            _LOGGER.error(  # noqa: TRY400
                 "Native Capella failed with code %d\n%s",
                 err.returncode,
                 err.stdout,
@@ -221,7 +221,7 @@ class _DockerRunner:
         parsed_output = json.loads(proc.stdout)[0]
         ep = parsed_output["Config"]["Entrypoint"]
         if not ep:
-            raise ValueError(f"Docker image has no entrypoint: {self.image}")
+            raise ValueError(f"Docker image has no entrypoint: {self.image}")  # noqa: TRY003
 
         username = parsed_output["Config"]["User"]
         return username, ep
@@ -249,7 +249,7 @@ class _DockerRunner:
             assert process.stdin is not None is not process.stdout
             try:
                 if process.stdout.readline() != b"OK\n":
-                    raise RuntimeError(
+                    raise RuntimeError(  # noqa: TRY003
                         f"Failed handshake with container image {self.image}"
                     )
 

@@ -10,7 +10,7 @@ import typing as t
 
 from capellambse import diagram, helpers
 
-from . import _common as C
+from . import _common as c
 from . import _filters, _styling
 
 if t.TYPE_CHECKING:
@@ -30,14 +30,14 @@ PORTALLOCATION_CLASS_BLACKLIST = {
 XT_EXITEM = "org.polarsys.capella.core.data.information:ExchangeItem"
 
 
-def generic_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def generic_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create an Edge from the diagram XML."""
     bendpoints, sourceport, targetport = extract_bendpoints(seb)
 
     try:
         ostyle = next(seb.diag_element.iterchildren("ownedStyle"))
     except StopIteration:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "Cannot find style definition for edge"
             f" {seb.data_element.attrib['element']}"
         ) from None
@@ -80,7 +80,7 @@ def generic_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
 
 
 def extract_bendpoints(
-    seb: C.ElementBuilder,
+    seb: c.ElementBuilder,
 ) -> tuple[
     list[diagram.Vector2D], diagram.DiagramElement, diagram.DiagramElement
 ]:
@@ -99,29 +99,29 @@ def extract_bendpoints(
     """
     uid = (
         seb.data_element.attrib.get("element")
-        or seb.data_element.attrib[C.ATT_XMID]
+        or seb.data_element.attrib[c.ATT_XMID]
     )
     sourceport, targetport = get_end_ports(seb)
 
     try:
         bendpoints_elm = next(seb.data_element.iterchildren("bendpoints"))
     except StopIteration:
-        raise ValueError(f"No bendpoints definition for {uid!r}") from None
+        raise ValueError(f"No bendpoints definition for {uid!r}") from None  # noqa: TRY003
 
-    bendpoint_type = bendpoints_elm.attrib.get(C.ATT_XMT)
+    bendpoint_type = bendpoints_elm.attrib.get(c.ATT_XMT)
 
     if bendpoint_type == "notation:RelativeBendpoints":
         bendpoints = _extract_relative_bendpoints(
             seb, sourceport, bendpoints_elm
         )
     else:
-        raise ValueError(f"Unknown bendpoint type {bendpoint_type}")
+        raise ValueError(f"Unknown bendpoint type {bendpoint_type}")  # noqa: TRY003
 
     return bendpoints, sourceport, targetport
 
 
 def _extract_relative_bendpoints(
-    seb: C.ElementBuilder,
+    seb: c.ElementBuilder,
     sourceport: diagram.DiagramElement,
     bendpoints_elm: etree._Element,
 ):
@@ -150,7 +150,7 @@ def _extract_relative_bendpoints(
 
 
 def get_end_ports(
-    seb: C.ElementBuilder,
+    seb: c.ElementBuilder,
 ) -> tuple[diagram.DiagramElement, diagram.DiagramElement]:
     """Retrieve the source and target port of an Edge in the diagram."""
 
@@ -165,12 +165,12 @@ def get_end_ports(
         except KeyError:
             uid = (
                 seb.data_element.attrib.get("element")
-                or seb.data_element.attrib[C.ATT_XMID]
+                or seb.data_element.attrib[c.ATT_XMID]
             )
-            C.LOGGER.warning(
+            c.LOGGER.warning(
                 "Cannot draw edge %r: %s missing from diagram", uid, portside
             )
-            raise C.SkipObject() from None
+            raise c.SkipObject from None
 
     return (get_port_object("source"), get_port_object("target"))
 
@@ -264,7 +264,7 @@ def snaptarget(
     i: int,
     next_i: int,
     target: diagram.DiagramElement,
-    movetarget: bool = False,
+    movetarget: bool = False,  # noqa: FBT001, FBT002
     routingstyle: str | None = None,
 ) -> None:
     """Snap an Edge's end and (optionally) its target into place.
@@ -382,7 +382,7 @@ def snap_tree(
 
 
 def _construct_labels(
-    edge: diagram.Edge, seb: C.SemanticElementBuilder
+    edge: diagram.Edge, seb: c.SemanticElementBuilder
 ) -> list[diagram.Box]:
     """Construct the label box for an edge."""
     refpoints = _find_refpoints(edge)
@@ -408,10 +408,10 @@ def _construct_labels(
                 end.get("value", "1") != "1"
             ):
                 if start.tag != "ownedMinCard":
-                    max, min = start.get("value"), end.get("value")
+                    max_card, min_card = start.get("value"), end.get("value")
                 else:
-                    min, max = start.get("value"), end.get("value")
-                mult = f"[{min}..{max}] "
+                    min_card, max_card = start.get("value"), end.get("value")
+                mult = f"[{min_card}..{max_card}] "
                 labeltext = mult + labeltext
                 label_pos -= diagram.Vector2D(helpers.extent_func(mult)[0], 0)
 
@@ -419,7 +419,7 @@ def _construct_labels(
         label_pos = label_pos.rotatedby(travel_direction.angleto((1, 0)))
 
         labels.append(
-            C.CenterAnchoredBox(
+            c.CenterAnchoredBox(
                 labelanchor + label_pos,
                 label_size,
                 label=labeltext,
@@ -457,24 +457,24 @@ def _find_refpoints(
             current_position = points[i]
 
         try:
-            dir = (points[i + 1] - points[i]).normalized
+            direction = (points[i + 1] - points[i]).normalized
         except ZeroDivisionError:  # pragma: no cover
-            dir = diagram.Vector2D(1, 0)
-        pos = current_position + dir * (next_refpoint - current_length)
-        refpoints.append((pos, dir))
+            direction = diagram.Vector2D(1, 0)
+        pos = current_position + direction * (next_refpoint - current_length)
+        refpoints.append((pos, direction))
 
     refpoints[0], refpoints[1] = refpoints[1], refpoints[0]
     return refpoints
 
 
-def labelless_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def labelless_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create an edge that should never have a label."""
     edge = generic_factory(seb)
     edge.labels = []
     return edge
 
 
-def port_allocation_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def port_allocation_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Specially handle ``PortAllocation`` type edges.
 
     Generic PortAllocations need to be differentiated into specific port
@@ -495,7 +495,7 @@ def port_allocation_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return generic_factory(seb)
 
 
-def state_transition_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def state_transition_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create a StateTransition.
 
     StateTransitions (connecting two Modes or two States) do not use the
@@ -529,7 +529,7 @@ def state_transition_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return edge
 
 
-def sequence_link_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def sequence_link_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create a SequenceLink.
 
     Sequence links (in Operational Process Diagrams) use the guard
@@ -542,7 +542,7 @@ def sequence_link_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return edge
 
 
-def constraint_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def constraint_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create the edge for a Constraint.
 
     As the Box already contains the label, it is not needed on the Edge.
@@ -555,7 +555,7 @@ def constraint_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return labelless_factory(seb)
 
 
-def fcil_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def fcil_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create a FunctionalChainInvolvementLinks."""
     seb.melodyobjs[0] = seb.melodyloader.follow_link(
         seb.melodyobjs[0], seb.melodyobjs[0].attrib["involved"]
@@ -572,14 +572,14 @@ def fcil_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return edge
 
 
-def eie_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def eie_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create an exchange item element link."""
     edge = generic_factory(seb)
     edge.labels = edge.labels[:1]
     return edge
 
 
-def fex_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def fex_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create a functional exchange."""
     edge = generic_factory(seb)
     assert edge.styleclass is not None
@@ -589,7 +589,7 @@ def fex_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return edge
 
 
-def _guard_condition(seb: C.SemanticElementBuilder, attr: str) -> str:
+def _guard_condition(seb: c.SemanticElementBuilder, attr: str) -> str:
     """Extract the guard condition's text from the XML."""
     try:
         guard = seb.melodyloader.follow_links(
@@ -598,12 +598,12 @@ def _guard_condition(seb: C.SemanticElementBuilder, attr: str) -> str:
     except IndexError:
         return ""
     else:
-        return C.get_spec_text(
+        return c.get_spec_text(
             dataclasses.replace(seb, melodyobjs=[guard, *seb.melodyobjs[1:]])
         )
 
 
-def req_relation_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def req_relation_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create a Capella Incoming or Outgoing Relation."""
     label = seb.melodyobjs[0].attrib.get("name", "")
     if not label:
@@ -612,9 +612,9 @@ def req_relation_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
             reltype = seb.melodyloader[reltype_id]
             label = reltype.attrib["ReqIFLongName"]
         except KeyError:
-            C.LOGGER.warning(
+            c.LOGGER.warning(
                 "Requirement-Relation %r has no RelationType",
-                seb.data_element.attrib[C.ATT_XMID],
+                seb.data_element.attrib[c.ATT_XMID],
             )
         finally:
             seb.melodyobjs[0].attrib["name"] = label
@@ -622,14 +622,14 @@ def req_relation_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
     return generic_factory(seb)
 
 
-def include_extend_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def include_extend_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create an AbstractCapabilityIncludes or -Extends edge."""
     if seb.melodyobjs[0].get("name") is None:
         seb.melodyobjs[0].attrib["name"] = seb.diag_element.get("name", "")
     return generic_factory(seb)
 
 
-def association_factory(seb: C.SemanticElementBuilder) -> diagram.Edge:
+def association_factory(seb: c.SemanticElementBuilder) -> diagram.Edge:
     """Create an Association."""
     edge = generic_factory(seb)
     for member in seb.melodyobjs[0].iterchildren("ownedMembers"):

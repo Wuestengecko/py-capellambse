@@ -71,9 +71,9 @@ class MelodyModel:
             roots.append(elem)
 
         if len(roots) < 1:
-            raise RuntimeError("No root project or library found")
+            raise RuntimeError("No root project or library found")  # noqa: TRY003
         if len(roots) > 1:
-            raise RuntimeError(f"Found {len(roots)} Project/Library objects")
+            raise RuntimeError(f"Found {len(roots)} Project/Library objects")  # noqa: TRY003
         obj = _obj.wrap_xml(self, roots[0])
         assert isinstance(obj, mm.capellamodeller.Project)
         return obj
@@ -397,7 +397,7 @@ class MelodyModel:
         for clsname in clsnames:
             if isinstance(clsname, type):
                 if not hasattr(clsname, "__capella_namespace__"):
-                    raise TypeError(
+                    raise TypeError(  # noqa: TRY003
                         f"Class does not belong to a namespace: {clsname!r}"
                     )
                 resolved = self.resolve_class(
@@ -495,18 +495,18 @@ class MelodyModel:
         """
         if isinstance(target, str):
             if not capellambse.helpers.is_uuid_string(target):
-                raise ValueError(f"Malformed UUID: {target!r}")
+                raise ValueError(f"Malformed UUID: {target!r}")  # noqa: TRY003
             uuid: str = target
             target = self.by_uuid(target)
 
         else:
             if target._model is not self:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     "Cannot find references to objects from different models"
                 )
             uuid = getattr(target, "uuid", "")
             if not capellambse.helpers.is_uuid_string(uuid):
-                raise ValueError(f"Malformed or missing UUID for {target!r}")
+                raise ValueError(f"Malformed or missing UUID for {target!r}")  # noqa: TRY003
 
         for elem in self._loader.xpath(
             f"//*[@*[contains(., '#{uuid}')] | */@*[contains(., '#{uuid}')]]",
@@ -651,7 +651,7 @@ class MelodyModel:
         ... )
         """
         if self.diagram_cache is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot update: No diagram_cache was specified for this model"
             )
         _diagram_cache.export(
@@ -724,7 +724,7 @@ class MelodyModel:
         if isinstance(typehint, etree._Element):
             qtype = capellambse.helpers.qtype_of(typehint)
             if qtype is None:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"Element is not a proper model element: {typehint!r}"
                 )
             typehint = qtype
@@ -749,7 +749,7 @@ class MelodyModel:
                 if len(providers) < 1:
                     raise _obj.MissingClassError(None, None, clsname)
                 if len(providers) > 1:
-                    raise ValueError(
+                    raise ValueError(  # noqa: TRY003
                         f"Multiple namespaces providing class {clsname!r}:"
                         f" {', '.join(i.alias for i in providers)}"
                     )
@@ -763,7 +763,7 @@ class MelodyModel:
                 ns = typehint[0]
 
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Invalid typehint, expected a str or 2-tuple: {typehint!r}"
             )
 
@@ -771,7 +771,7 @@ class MelodyModel:
             return ns.get_class(clsname)
         viewpoint = self.referenced_viewpoints().get(ns.viewpoint)
         if viewpoint is None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Required viewpoint not activated: {viewpoint!r}"
             )
         return ns.get_class(clsname, viewpoint)
@@ -784,7 +784,7 @@ class MelodyModel:
 
         vp = self.referenced_viewpoints().get(ns.viewpoint)
         if vp is None:
-            raise _descriptors.InvalidModificationError(
+            raise _descriptors.InvalidModificationError(  # noqa: TRY003
                 f"Required viewpoint is not activated: {ns.viewpoint}"
             )
         vp = ns.trim_version(vp)
