@@ -98,7 +98,7 @@ class ZipFileHandler(abc.FileHandler):
         mode: t.Literal["r", "rb", "w", "wb"] = "rb",
     ) -> t.IO[bytes]:
         if "w" in mode:
-            raise ValueError("Writing to zip files is not supported")
+            raise ValueError("Writing to zip files is not supported")  # noqa: TRY003
 
         filename = helpers.normalize_pure_path(filename, base=self.subdir)
         try:

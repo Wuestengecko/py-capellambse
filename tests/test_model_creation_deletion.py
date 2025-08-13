@@ -41,7 +41,7 @@ def test_created_elements_show_up_in_xml_after_adding_them(
     try:
         writemodel._loader[newobj.uuid]
     except KeyError as err:
-        raise AssertionError(
+        raise AssertionError(  # noqa: TRY003
             "Cannot find added element via subscripting"
         ) from err
 

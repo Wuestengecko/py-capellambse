@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 @click.option(
     "-f",
     "--format",
+    "imgformat",
     type=click.Choice(sorted(_diagram_cache.VALID_FORMATS)),
     default="svg",
     help="Image output format",
@@ -73,9 +74,10 @@ logger = logging.getLogger(__name__)
     show_envvar=True,
 )
 def main(
+    *,
     modelinfo: dict[str, t.Any],
     output: pathlib.Path,
-    format: str,
+    imgformat: str,
     index: bool,
     exe: str | None,
     docker: str | None,
@@ -145,7 +147,7 @@ def main(
     diagrams = _diagram_cache.export(
         capella,
         model_,
-        format=format,
+        format=imgformat,
         index=index,
         force=force,
         background=background,

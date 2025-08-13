@@ -28,7 +28,7 @@ from lxml import etree
 import capellambse._namespaces as _n
 from capellambse import diagram, helpers, loader
 
-from . import _common as C
+from . import _common as c
 from . import _filters, _semantic, _visual
 from ._filters import GLOBAL_FILTERS, ActiveFilters, GlobalFilter
 
@@ -77,7 +77,7 @@ def enumerate_descriptors(
         Only return diagrams of the given viewpoint. If not given, all
         diagrams are returned.
     """
-    for view in model.xpath(C.XP_VIEWS):
+    for view in model.xpath(c.XP_VIEWS):
         if viewpoint and _viewpoint_of(view) != viewpoint:
             continue
 
@@ -86,7 +86,7 @@ def enumerate_descriptors(
                 continue
             rep_path = d.attrib["repPath"]
             if not rep_path.startswith("#"):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY003
                     f"Malformed diagram reference: {rep_path!r}"
                 )
             diag_root = model[rep_path]
@@ -100,7 +100,7 @@ def viewpoint_of(descriptor: DRepresentationDescriptor) -> str:
     assert isinstance(descriptor, etree._Element)
     view = descriptor.getparent()
     if view is None:
-        raise RuntimeError("No parent view found for diagram")
+        raise RuntimeError("No parent view found for diagram")  # noqa: TRY003
     return _viewpoint_of(view)
 
 
@@ -108,7 +108,7 @@ def _viewpoint_of(view: etree._Element) -> str:
     viewpoint = helpers.xpath_fetch_unique(
         "./viewpoint", view, "viewpoint description"
     )
-    viewname = C.RE_VIEWPOINT.search(viewpoint.attrib["href"])
+    viewname = c.RE_VIEWPOINT.search(viewpoint.attrib["href"])
     if not viewname:
         return ""
     return urllib.parse.unquote(viewname.group(1))
@@ -122,7 +122,7 @@ def parse_diagrams(
         try:
             d = parse_diagram(model, descriptor, **params)
         except Exception as err:  # noqa: BLE001, PERF203
-            C.LOGGER.warning(
+            c.LOGGER.warning(
                 "Ignoring invalid diagram %r: %s", descriptor, err
             )
         else:
@@ -156,12 +156,12 @@ def find_target(
     assert isinstance(descriptor, etree._Element)
     target_anchors = list(descriptor.iterchildren("target"))
     if len(target_anchors) != 1:
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY003
             f"Expected 1 <target> anchor, found {len(target_anchors)}"
         )
     target_href = target_anchors[0].get("href")
     if not target_href:
-        raise RuntimeError("<target> anchor has no href")
+        raise RuntimeError("<target> anchor has no href")  # noqa: TRY003
     return model.follow_link(descriptor[1], target_href)
 
 
@@ -173,7 +173,7 @@ def get_styleclass(descriptor: DRepresentationDescriptor) -> str | None:
     # This style description is something resembling XPath, e.g.
     #     platform:/[...]#//[...]/@ownedRepresentations[name='$$$']
     # The thing we're interested in is denoted as $$$ above.
-    styleclass_match = C.RE_STYLECLASS.search(styledescription.attrib["href"])
+    styleclass_match = c.RE_STYLECLASS.search(styledescription.attrib["href"])
     if not styleclass_match:
         return None
     return urllib.parse.unquote(styleclass_match.group(1))
@@ -196,7 +196,7 @@ def parse_diagram(
         Additional render parameters.
     """
     if not is_representation_descriptor(descriptor):
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             f"Expected a DRepresentationDescriptor, got {descriptor!r}"
         )
     diag_descriptor = _build_descriptor(model, descriptor)
@@ -210,7 +210,7 @@ def parse_diagram(
         model.trees[diag_descriptor.fragment].root, diag_descriptor.uid
     )
     treedata = helpers.xpath_fetch_unique(
-        C.XP_ANNOTATION_ENTRIES,
+        c.XP_ANNOTATION_ENTRIES,
         dgtree,
         "ownedAnnotationsEntries with source GMF_DIAGRAMS",
         dgtree.attrib["uid"],
@@ -218,7 +218,7 @@ def parse_diagram(
     assert treedata is not None
 
     if treedata.attrib.get("measurementUnit", "Pixel") != "Pixel":
-        C.LOGGER.warning(
+        c.LOGGER.warning(
             "Unknown measurement unit %r",
             treedata.attrib.get("measurementUnit"),
         )
@@ -226,7 +226,7 @@ def parse_diagram(
     for data_elm in treedata.iterdescendants("children", "edges"):
         try:
             elm = _element_from_xml(
-                C.ElementBuilder(
+                c.ElementBuilder(
                     target_diagram=diag,
                     diagram_tree=dgtree,
                     data_element=data_elm,
@@ -234,13 +234,13 @@ def parse_diagram(
                     fragment=diag_descriptor.fragment,
                 )
             )
-        except C.SkipObject:
+        except c.SkipObject:
             continue
         assert elm is not None
-        diag.add_element(elm, False, force=True)
+        diag.add_element(elm, extend_viewport=False, force=True)
 
     if len(diag) == 0:
-        C.LOGGER.error(
+        c.LOGGER.error(
             "Deserialized diagram %r is empty",
             diag_descriptor.name or diag.name,
         )
@@ -252,7 +252,7 @@ def parse_diagram(
     return diag
 
 
-def _element_from_xml(ebd: C.ElementBuilder) -> diagram.DiagramElement:
+def _element_from_xml(ebd: c.ElementBuilder) -> diagram.DiagramElement:
     """Construct a single diagram element from the model XML."""
     element = ebd.data_element.get("element")
     tag = ebd.melodyloader[element].tag if element else None
@@ -296,7 +296,7 @@ def iter_visible(
     diag_element = model.follow_link(descriptor, descriptor.attrib["repPath"])
 
     style_data = helpers.xpath_fetch_unique(
-        C.XP_ANNOTATION_ENTRIES,
+        c.XP_ANNOTATION_ENTRIES,
         diag_element,
         "ownedAnnotationsEntries with source GMF_DIAGRAMS",
         diag_element.attrib["uid"],
@@ -325,7 +325,7 @@ def iter_visible(
         try:
             target = next(elt.iterdescendants("target"))
         except StopIteration:
-            C.LOGGER.debug(
+            c.LOGGER.debug(
                 "No semantic element found for %r, ignoring",
                 elt.get("name", elt.attrib["uid"]),
             )
@@ -334,7 +334,7 @@ def iter_visible(
         try:
             elem = model.follow_link(target, target.attrib["href"])
         except KeyError:
-            C.LOGGER.debug(
+            c.LOGGER.debug(
                 "Semantic element has been deleted, ignoring: %s",
                 target.attrib["href"],
             )

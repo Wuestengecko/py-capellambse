@@ -104,7 +104,7 @@ def test_process_html_fragments_does_not_process_empty_markup() -> None:
     markup = ""
 
     def cb(_: etree._Element) -> None:
-        raise AssertionError("Callback should not be called")
+        raise AssertionError("Callback should not be called")  # noqa: TRY003
 
     processed_markup = helpers.process_html_fragments(markup, cb)
 
@@ -115,7 +115,7 @@ def test_process_html_fragments_does_not_process_plain_text() -> None:
     markup = "Test"
 
     def cb(_: etree._Element) -> None:
-        raise AssertionError("Callback should not be called")
+        raise AssertionError("Callback should not be called")  # noqa: TRY003
 
     processed_markup = helpers.process_html_fragments(markup, cb)
 

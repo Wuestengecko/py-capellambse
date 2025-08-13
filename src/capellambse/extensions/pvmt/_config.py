@@ -102,7 +102,7 @@ def _matchprops(
         elif isinstance(actual, mm.capellacore.EnumerationPropertyLiteral):
             ismatch = cmp(actual.name, wanted)
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Unhandled property value type: {type(actual).__name__}"
             )
 
@@ -126,7 +126,7 @@ class SelectorRules:
             return ()
 
         if self._model is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"This {type(self).__name__} is not associated with a model"
             )
 
@@ -171,7 +171,7 @@ class SelectorRules:
             value = rule.group("value")
             match = _PROP_RE.fullmatch(value)
             if not match:
-                raise RuntimeError(f"Invalid property spec: {value!r}")
+                raise RuntimeError(f"Invalid property spec: {value!r}")  # noqa: TRY003
             prop, op, val = match.group("prop", "op", "val")
             assert isinstance(prop, str)
             assert isinstance(op, str)
@@ -198,7 +198,7 @@ class PVMTDescriptionProperty(m.BasePOD[SelectorRules]):
         if isinstance(value, SelectorRules):
             value = value.raw
         elif not isinstance(value, str):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Unsupported type, must be str or SelectorRules:"
                 f" {type(value).__name__}"
             )
@@ -260,9 +260,9 @@ class ManagedGroup(mm.capellacore.PropertyValueGroup):
 
         objrepr = getattr(obj, "_short_repr_", lambda: repr(obj))
         if not hasattr(obj, "property_value_groups"):
-            raise TypeError(f"Object cannot own PV groups: {objrepr()}")
+            raise TypeError(f"Object cannot own PV groups: {objrepr()}")  # noqa: TRY003
         if not hasattr(obj, "applied_property_value_groups"):
-            raise TypeError(f"Cannot apply PV groups to {objrepr()}")
+            raise TypeError(f"Cannot apply PV groups to {objrepr()}")  # noqa: TRY003
 
         assert isinstance(self.parent, mm.capellacore.PropertyValuePkg), (
             "PVMT group's parent is not a domain?"

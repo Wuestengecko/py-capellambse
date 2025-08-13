@@ -215,7 +215,7 @@ class GitlabArtifactsFiles(abc.FileHandler):
             LOGGER.debug("Using the $CI_JOB_TOKEN")
             return token
 
-        raise TypeError("Cannot connect to Gitlab: No 'token' found")
+        raise TypeError("Cannot connect to Gitlab: No 'token' found")  # noqa: TRY003
 
     @staticmethod
     def __load_token_from_arg(token: str) -> str:
@@ -225,23 +225,23 @@ class GitlabArtifactsFiles(abc.FileHandler):
         try:
             filename = os.environ[token[1:]]
         except KeyError:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Token environment variable {token} is unset"
             ) from None
 
         try:
             contents = pathlib.Path(filename).read_text(encoding="ascii")
         except FileNotFoundError:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Token file from {token} not found"
                 " - did you set the variable type to FILE?"
             ) from None
         except OSError:
-            raise ValueError(f"Cannot read token file from {token}") from None
+            raise ValueError(f"Cannot read token file from {token}") from None  # noqa: TRY003
 
         contents = contents.strip()
         if not contents:
-            raise ValueError(f"Token file from {token} is empty")
+            raise ValueError(f"Token file from {token} is empty")  # noqa: TRY003
         return contents
 
     @staticmethod
@@ -271,7 +271,7 @@ class GitlabArtifactsFiles(abc.FileHandler):
         if project := os.getenv("CI_PROJECT_ID"):
             return int(project)
 
-        raise TypeError("No 'project' specified, and not running in Gitlab CI")
+        raise TypeError("No 'project' specified, and not running in Gitlab CI")  # noqa: TRY003
 
     def __resolve_job(self, job: str | int) -> tuple[int, str]:
         try:
@@ -299,7 +299,7 @@ class GitlabArtifactsFiles(abc.FileHandler):
                 LOGGER.debug("Selected job with ID %d", jobinfo["id"])
                 return (jobinfo["id"], job)
 
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY003
             f"No recent successful {job!r} job found on {self.__branch!r}"
         )
 
@@ -360,7 +360,7 @@ class GitlabArtifactsFiles(abc.FileHandler):
         path = str(helpers.normalize_pure_path(filename, base=self.subdir))
 
         if "w" in mode:
-            raise TypeError("Cannot write to Gitlab artifacts")
+            raise TypeError("Cannot write to Gitlab artifacts")  # noqa: TRY003
 
         cachekey = f"{self.__path}|{self.__project}|{self.__job}|{path}"
         try:

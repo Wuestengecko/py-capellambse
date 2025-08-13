@@ -25,10 +25,10 @@ def from_xml(ebd: c.ElementBuilder) -> diagram.DiagramElement:
     el_type = ebd.data_element.attrib[c.ATT_XMT].split(":")[-1]
     if el_type not in VISUAL_TYPES:
         LOGGER.error("Unknown visual element type, skipping: %r", el_type)
-        raise c.SkipObject()
+        raise c.SkipObject
     factory = VISUAL_TYPES[el_type]
     if factory is None:
-        raise c.SkipObject()
+        raise c.SkipObject
     return factory(ebd)
 
 
@@ -95,7 +95,7 @@ def shape_factory(ebd: c.ElementBuilder) -> diagram.Box:
     try:
         layout = next(ebd.data_element.iterchildren("layoutConstraint"))
     except StopIteration:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             f"No layoutConstraint found for element {uid}"
         ) from None
 

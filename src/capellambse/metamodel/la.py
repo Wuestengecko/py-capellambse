@@ -47,7 +47,7 @@ class LogicalArchitecture(cs.ComponentArchitecture):
         pkg = self.function_pkg
         assert pkg is not None
         if not pkg.functions:
-            raise RuntimeError(f"Package {pkg._short_repr_()} is empty")
+            raise RuntimeError(f"Package {pkg._short_repr_()} is empty")  # noqa: TRY003
         return pkg.functions[0]
 
     @property

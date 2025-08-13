@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import dataclasses
-import importlib
 import typing as t
 import urllib.parse
 
@@ -14,8 +13,10 @@ from lxml import etree
 
 import capellambse.loader
 from capellambse import aird, diagram, model
+from capellambse.aird import _common as c
 
-from .. import _common as c
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 Phase2CompositeFilter = t.Callable[
     [c.ElementBuilder, diagram.DiagramElement], None
@@ -160,7 +161,7 @@ def applyfilters(args: FilterArguments) -> None:
     # Apply post-processing filters on elements
     for dgobject in args.target_diagram:
         try:
-            filters = dgobject._compfilters  # type: ignore[union-attr]
+            filters = dgobject._compfilters  # type: ignore[union-attr]  # noqa: SLF001
         except AttributeError:
             continue
         assert dgobject.uuid is not None
@@ -186,7 +187,7 @@ def applyfilters(args: FilterArguments) -> None:
                 dgobject,
             )
 
-        del dgobject._compfilters  # type: ignore[union-attr]
+        del dgobject._compfilters  # type: ignore[union-attr]  # noqa: SLF001
 
     # Apply global diagram filters
     for flt in args.diagram_root.iterchildren("activatedFilters"):
@@ -245,19 +246,19 @@ def _set_composite_filter(
     if phase2 is None:
         return
     if not hasattr(dgobject, "_compfilters"):
-        dgobject._compfilters = []  # type: ignore[union-attr]
-    dgobject._compfilters.append((flttype, phase2))  # type: ignore[union-attr]
+        dgobject._compfilters = []  # type: ignore[union-attr]  # noqa: SLF001
+    dgobject._compfilters.append((flttype, phase2))  # type: ignore[union-attr]  # noqa: SLF001
 
 
 def _extract_filter_type(flt_elm: etree._Element) -> str:
     try:
         flttype = flt_elm.attrib["href"]
     except KeyError:
-        raise ValueError("Filter element has no href") from None
+        raise ValueError("Filter element has no href") from None  # noqa: TRY003
 
     compfilter = c.RE_COMPOSITE_FILTER.search(flttype)
     if not compfilter or not compfilter.group(1):
-        raise ValueError("Filter href does not match known pattern") from None
+        raise ValueError("Filter href does not match known pattern") from None  # noqa: TRY003
 
     return urllib.parse.unquote(compfilter.group(1))
 
@@ -287,20 +288,20 @@ class ActiveFilters(t.MutableSet[str]):
         return self._target.iterchildren(self._xml_tag)
 
     @staticmethod
-    def _get_filter_name(filter: etree._Element) -> str | None:
-        filter_name = c.RE_COMPOSITE_FILTER.search(filter.get("href", ""))
+    def _get_filter_name(flt: etree._Element, /) -> str | None:
+        filter_name = c.RE_COMPOSITE_FILTER.search(flt.get("href", ""))
         if filter_name:
             return filter_name.group(1)
         return None
 
-    def __contains__(self, filter: object) -> bool:
-        if not isinstance(filter, str):
+    def __contains__(self, flt: object, /) -> bool:
+        if not isinstance(flt, str):
             return False
-        return filter in iter(self)
+        return flt in iter(self)
 
     def __iter__(self) -> cabc.Iterator[str]:
-        for filter in self._elements:
-            if filter_name := self._get_filter_name(filter):
+        for flt in self._elements:
+            if filter_name := self._get_filter_name(flt):
                 yield filter_name
 
     def __len__(self) -> int:
@@ -318,7 +319,7 @@ class ActiveFilters(t.MutableSet[str]):
         if value in self:
             return
 
-        diag_descriptor = aird._build_descriptor(
+        diag_descriptor = aird._build_descriptor(  # noqa: SLF001
             self._model._loader, self._diagram._element
         )
         viewpoint = urllib.parse.quote(diag_descriptor.viewpoint)
@@ -344,10 +345,10 @@ class ActiveFilters(t.MutableSet[str]):
         Deletes ``<activatedFilters>`` XML element from the diagram
         element tree.
         """
-        for filter in self._elements:
-            filter_name = self._get_filter_name(filter)
+        for flt in self._elements:
+            filter_name = self._get_filter_name(flt)
             if filter_name is not None and value == filter_name:
-                self._target.remove(filter)
+                self._target.remove(flt)
                 self._diagram.invalidate_cache()
                 break
 
@@ -356,14 +357,4 @@ class ActiveFilters(t.MutableSet[str]):
 
 
 # Load filter modules
-for module in ("composite", "global"):
-    try:
-        importlib.import_module(f"{__name__}.{module}")
-    except Exception as _err:  # noqa: BLE001, PERF203
-        c.LOGGER.error(
-            "Cannot load filters from %s: %s: %s",
-            module,
-            _err.__class__.__name__,
-            _err,
-        )
-del module
+from . import _composite, _global  # noqa: F401

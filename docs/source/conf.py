@@ -27,7 +27,7 @@ with open("../../pyproject.toml", "rb") as f:
 project = "py-capellambse"
 pypi = "capellambse"
 author = _metadata["authors"][0]["name"]
-copyright = f"{author} and the {_metadata['name']} contributors"
+copyright = f"{author} and the {_metadata['name']} contributors"  # noqa: A001
 
 # -- General configuration ---------------------------------------------------
 

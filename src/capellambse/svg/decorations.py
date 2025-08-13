@@ -80,7 +80,7 @@ class MarkerFactories(dict[str, MarkerFactory]):
                 func.__name__,
             )
             if not symbol_name.endswith("Mark"):
-                raise RuntimeError(f"Invalid marker name: {symbol_name}")
+                raise RuntimeError(f"Invalid marker name: {symbol_name}")  # noqa: TRY003
             self[symbol_name] = MarkerFactory(func, tuple(dependencies))
             return func
 

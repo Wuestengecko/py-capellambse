@@ -469,7 +469,7 @@ def _build_attribute_value_simple(attr: rq.Attribute) -> etree._Element:
             utcval = value.astimezone(datetime.timezone.utc)
             obj.set("THE-VALUE", utcval.strftime(REQIF_UTC_DATEFORMAT))
         else:
-            raise TypeError(f"Expected datetime, got {type(value).__name__}")
+            raise TypeError(f"Expected datetime, got {type(value).__name__}")  # noqa: TRY003
     elif attrtype == "INTEGER":
         obj.set("THE-VALUE", str(int(attr.value)))
     elif attrtype == "REAL":
@@ -484,7 +484,7 @@ def _build_attribute_value_simple(attr: rq.Attribute) -> etree._Element:
     elif attrtype == "STRING":
         obj.set("THE-VALUE", attr.value or "")
     else:
-        raise ValueError(f"Unknown attribute type {attrtype}")
+        raise ValueError(f"Unknown attribute type {attrtype}")  # noqa: TRY003
     obj.append(_ref_attribute_definition(attrtype, attr.definition))
     return obj
 

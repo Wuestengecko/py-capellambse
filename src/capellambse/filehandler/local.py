@@ -41,7 +41,7 @@ class LocalFileHandler(abc.FileHandler):
             return path.open("rb")
 
         if normpath in self.__transaction:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"File already written in this transaction: {normpath}"
             )
         self.__transaction.add(normpath)
@@ -70,7 +70,7 @@ class LocalFileHandler(abc.FileHandler):
 
         with super().write_transaction(**kw) as unused_kw:
             if self.__transaction is not None:
-                raise RuntimeError("Another transaction is already open")
+                raise RuntimeError("Another transaction is already open")  # noqa: TRY003
             self.__transaction = set()
 
             try:
