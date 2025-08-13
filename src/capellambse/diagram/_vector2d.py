@@ -32,15 +32,15 @@ class Vector2D(t.NamedTuple):
         return self.__map2(operator.add, other)
 
     def __radd__(self, other: Vec2ish) -> Vector2D:
-        return self.__map2(operator.add, other, True)
+        return self.__map2(operator.add, other, reflected=True)
 
     def __sub__(self, other: Vec2ish) -> Vector2D:
         return self.__map2(operator.sub, other)
 
     def __rsub__(self, other: Vec2ish) -> Vector2D:
-        return self.__map2(operator.sub, other, True)
+        return self.__map2(operator.sub, other, reflected=True)
 
-    @t.overload  # type: ignore
+    @t.overload  # type: ignore[override]
     def __mul__(self, other: Vec2ish) -> Vec2Element: ...
     @t.overload
     def __mul__(self, other: Vec2Element) -> Vector2D: ...
@@ -55,22 +55,22 @@ class Vector2D(t.NamedTuple):
     @t.overload
     def __rmul__(self, other: Vec2Element) -> Vector2D: ...
     def __rmul__(self, other: Vec2Element | Vec2ish) -> Vector2D | Vec2Element:
-        result = self.__map2(operator.mul, other, True)
+        result = self.__map2(operator.mul, other, reflected=True)
         if result is NotImplemented:
-            return self.__map(operator.mul, other, True)
+            return self.__map(operator.mul, other, reflected=True)
         return sum(result)
 
     def __matmul__(self, other: Vec2ish) -> Vector2D:
         return self.__map2(operator.mul, other)
 
     def __rmatmul__(self, other: Vec2ish) -> Vector2D:
-        return self.__map2(operator.mul, other, True)
+        return self.__map2(operator.mul, other, reflected=True)
 
     def __truediv__(self, other: Vec2Element) -> Vector2D:
         return self.__map(operator.truediv, other)
 
     def __rtruediv__(self, other: Vec2Element) -> Vector2D:
-        return self.__map(operator.truediv, other, True)
+        return self.__map(operator.truediv, other, reflected=True)
 
     def __floordiv__(self, other: Vec2Element) -> Vector2D:
         result = self.__map(operator.floordiv, other)
@@ -79,7 +79,7 @@ class Vector2D(t.NamedTuple):
         return type(self)(int(result.x), int(result.y))
 
     def __rfloordiv__(self, other: Vec2Element) -> Vector2D:
-        result = self.__map(operator.floordiv, other, True)
+        result = self.__map(operator.floordiv, other, reflected=True)
         if result is NotImplemented:  # pragma: no cover
             return result
         return type(self)(int(result.x), int(result.y))
@@ -198,6 +198,7 @@ class Vector2D(t.NamedTuple):
         self,
         func: cabc.Callable[[Vec2Element, Vec2Element], Vec2Element],
         other: Vec2Element | Vec2ish,
+        *,
         reflected: bool = False,
     ) -> Vector2D:
         if not isinstance(other, int | float):  # pragma: no cover
@@ -210,12 +211,13 @@ class Vector2D(t.NamedTuple):
         self,
         func: cabc.Callable[[Vec2Element, Vec2Element], Vec2Element],
         other: Vec2Element | Vec2ish,
+        *,
         reflected: bool = False,
     ) -> Vector2D:
         if isinstance(other, int | float):  # pragma: no cover
             return NotImplemented
         if not len(other) == 2:  # pragma: no cover
-            raise ValueError("Length of 'other' must be 2")
+            raise ValueError("Length of 'other' must be 2")  # noqa: TRY003
         if reflected:
             return type(self)(func(other[0], self[0]), func(other[1], self[1]))
         return type(self)(func(self[0], other[0]), func(self[1], other[1]))
@@ -247,7 +249,7 @@ class Vec2Property:
         if obj is None:
             return self
         if self.name is None:
-            raise RuntimeError("This property does not have a name yet")
+            raise RuntimeError("This property does not have a name yet")  # noqa: TRY003
         try:
             return getattr(obj, f"_{type(self).__name__}__{self.name}")
         except AttributeError:
@@ -257,7 +259,7 @@ class Vec2Property:
 
     def __set__(self, obj: t.Any, value: Vec2ish) -> None:
         if self.name is None:
-            raise RuntimeError("This property does not have a name yet")
+            raise RuntimeError("This property does not have a name yet")  # noqa: TRY003
         if not isinstance(value, Vector2D):
             value = Vector2D(*value)
         setattr(obj, f"_{type(self).__name__}__{self.name}", value)
@@ -305,7 +307,7 @@ class Vec2List(t.MutableSequence[Vector2D]):
     ) -> None:
         if isinstance(index, slice):
             assert not isinstance(value, Vector2D)
-            value = t.cast(cabc.Iterable[Vec2ish], value)
+            value = t.cast("cabc.Iterable[Vec2ish]", value)
             self.__list[index] = (self.__cast(v) for v in value)
         else:
             assert isinstance(value, Vector2D)
@@ -352,7 +354,7 @@ def line_intersect(
     (x3, y3), (x4, y4) = line2
     denum = (x1 - x2) * (y3 - y4) - (x3 - x4) * (y1 - y2)
     if denum == 0:
-        raise ValueError("Lines are parallel")
+        raise ValueError("Lines are parallel")  # noqa: TRY003
 
     d1 = x1 * y2 - x2 * y1
     d2 = x3 * y4 - x4 * y3

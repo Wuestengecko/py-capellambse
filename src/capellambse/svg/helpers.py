@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import math
 import typing as t
 
 from capellambse import helpers
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 AlignmentLiteral = t.Literal["center", "left", "right"]
 

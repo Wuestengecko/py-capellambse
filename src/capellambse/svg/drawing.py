@@ -881,7 +881,7 @@ class Drawing:
         try:
             drawfunc, style_type = type_mapping[mobj["type"]]
         except KeyError:
-            raise ValueError(f"Invalid object type: {mobj['type']}") from None
+            raise ValueError(f"Invalid object type: {mobj['type']}") from None  # noqa: TRY003
 
         objparams = {
             f"{k}_": v for k, v in mobj.items() if k not in {"type", "style"}

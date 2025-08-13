@@ -3,14 +3,16 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import json
-import os
 import pathlib
 import typing as t
 
 from capellambse.svg.drawing import LabelDict
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import os
 
 ContentsDict = t.TypedDict(
     "ContentsDict",
@@ -163,13 +165,13 @@ class DiagramMetadata:
     ) -> None:
         # Add padding to viewbox to account for drawn borders
         if len(pos) != 2:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Invalid position: '{pos}'. Needs to be of format (x, y)."
             )
 
         self.pos = (pos[0] - 10, pos[1] - 10)
         if len(size) != 2:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Invalid size: '{pos}'. Needs to be of format (x, y)."
             )
 
@@ -182,7 +184,7 @@ class DiagramMetadata:
     def from_dict(cls, data: DiagramMetadataDict) -> DiagramMetadata:
         name = data.get("name")
         if not name:
-            raise TypeError("No diagram name defined")
+            raise TypeError("No diagram name defined")  # noqa: TRY003
         return cls(
             (data["x"], data["y"]),
             (data["width"], data["height"]),

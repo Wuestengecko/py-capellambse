@@ -98,7 +98,7 @@ class Styling:
                 value,  # type: ignore[arg-type]  # false-positive
             )
             return f'url("#{grad_id}")'
-        raise ValueError(f"Invalid styling value: {value!r}")
+        raise ValueError(f"Invalid styling value: {value!r}")  # noqa: TRY003
 
     def _to_dict(self) -> dict[str, float | int | str]:
         """Convert this styling to a dictionary.

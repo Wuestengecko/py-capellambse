@@ -26,7 +26,6 @@ __all__ = [
 
 import abc
 import base64
-import collections.abc as cabc
 import contextlib
 import enum
 import importlib.metadata as imm
@@ -39,12 +38,16 @@ import typing as t
 import uuid
 
 import markupsafe
-from lxml import etree
 
 import capellambse
 from capellambse import aird, diagram, helpers, svg
 
 from . import _descriptors, _obj, _pods, stringy_enum
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    from lxml import etree
 
 VIEWPOINT_NS = _obj.Namespace(
     "http://www.eclipse.org/sirius/1.1.0",
@@ -415,7 +418,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
                     if not (
                         self._model._fallback_render_aird or self._allow_render
                     ):
-                        raise RuntimeError(
+                        raise RuntimeError(  # noqa: TRY003
                             f"Diagram not in cache: {self.name}"
                         ) from None
                 except Exception:
@@ -473,7 +476,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
             if ext := getattr(conv, "filename_extension", None):
                 file = f"{self.name} ({self.uuid}){ext}"
             else:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"No known extension for format {fmt!r},"
                     " specify a file name explicitly"
                 )
@@ -481,7 +484,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
         if isinstance(data, str):
             data = data.encode("utf-8")
         elif not isinstance(data, bytes):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot write format {fmt!r} to file:"
                 f" expected str or bytes, got {type(data).__name__}"
             )
@@ -683,14 +686,14 @@ class DRepresentationDescriptor(AbstractDiagram):
 
         target_id = element.get("uid")
         if not target_id:
-            raise RuntimeError(f"No uid defined on {element!r}")
+            raise RuntimeError(f"No uid defined on {element!r}")  # noqa: TRY003
         return model.diagrams.by_representation_path(
             f"#{target_id}", single=True
         )
 
     def __init__(self, **kw: t.Any) -> None:
         del kw
-        raise TypeError("Cannot create a Diagram this way")
+        raise TypeError("Cannot create a Diagram this way")  # noqa: TRY003
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
@@ -868,7 +871,7 @@ class PNGFormat:
         try:
             import cairosvg  # noqa: PLC0415
         except OSError as error:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 "Cannot import cairosvg. You are likely missing .dll's."
                 " Please see the README for instructions."
             ) from error
@@ -1004,7 +1007,7 @@ def convert_format(
             break
         chain.append(i)
     if not chain or getattr(chain[-1], "depends", None) is not source:
-        raise ValueError(f"Cannot convert from {sourcefmt} to {targetfmt}")
+        raise ValueError(f"Cannot convert from {sourcefmt} to {targetfmt}")  # noqa: TRY003
 
     return _run_converter_chain(chain, data, pretty_print=pretty_print)
 
@@ -1028,7 +1031,7 @@ def _run_converter_chain(
 def _find_format_converter(fmt: str) -> DiagramConverter:
     eps = imm.entry_points(group="capellambse.diagram.formats", name=fmt)
     if not eps:
-        raise UnknownOutputFormat(f"Unknown image output format {fmt}")
+        raise UnknownOutputFormat(f"Unknown image output format {fmt}")  # noqa: TRY003
     return next(iter(eps)).load()
 
 
@@ -1055,7 +1058,7 @@ if not t.TYPE_CHECKING:
 
     def __getattr__(name):
         if name != "REPR_DRAW":
-            raise AttributeError(f"No name {name} in module {__name__}")
+            raise AttributeError(f"No name {name} in module {__name__}")  # noqa: TRY003
         try:
             return globals()["REPR_DRAW"]
         except KeyError:

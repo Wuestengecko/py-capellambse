@@ -6,10 +6,11 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-import collections.abc as cabc
 import typing as t
 
 if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
     from . import _obj
 
 

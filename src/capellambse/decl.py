@@ -158,7 +158,7 @@ def load_with_metadata(
         The instruction stream.
     """
     if hasattr(file, "read"):
-        file = t.cast(t.IO[str], file)
+        file = t.cast("t.IO[str]", file)
         ctx: t.ContextManager[t.IO[str]] = contextlib.nullcontext(file)
     else:
         assert not isinstance(file, t.IO)
@@ -168,12 +168,12 @@ def load_with_metadata(
         contents = list(yaml.load_all(opened_file, Loader=YDMLoader))
 
     if len(contents) == 2:
-        return (t.cast(Metadata, contents[0]) or {}, contents[1] or [])
+        return (t.cast("Metadata", contents[0]) or {}, contents[1] or [])
     if len(contents) == 1:
         return ({}, contents[0] or [])
     if len(contents) == 0:
         return ({}, [])
-    raise ValueError(
+    raise ValueError(  # noqa: TRY003
         f"Expected a YAML file with 1 or 2 documents, found {len(contents)}"
     )
 
@@ -222,11 +222,11 @@ def apply(
 
     if strict:
         if not metadata:
-            raise ValueError("No metadata found to verify in strict mode")
+            raise ValueError("No metadata found to verify in strict mode")  # noqa: TRY003
         try:
             _verify_metadata(model, metadata)
         except TypeError as err:
-            raise TypeError(f"Cannot apply decl: {err}") from None
+            raise TypeError(f"Cannot apply decl: {err}") from None  # noqa: TRY003
     elif metadata:
         try:
             _verify_metadata(model, metadata)
@@ -246,7 +246,7 @@ def apply(
                 continue
 
         if not isinstance(parent, capellambse.model.ModelElement):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Expected a model object as parent, found "
                 f"{type(parent).__name__}"
             )
@@ -261,14 +261,14 @@ def apply(
                     deferred[promise].append(outcome)
                 else:
                     if promise in promises:
-                        raise ValueError(
+                        raise ValueError(  # noqa: TRY003
                             f"promise_id defined twice: {promise.identifier}"
                         )
                     promises[promise] = outcome
                     instructions.extend(deferred.pop(promise, ()))
         if instruction:
             keys = ", ".join(instruction)
-            raise ValueError(f"Unrecognized keys in instruction: {keys}")
+            raise ValueError(f"Unrecognized keys in instruction: {keys}")  # noqa: TRY003
     if deferred:
         raise UnfulfilledPromisesError(frozenset(deferred))
     return promises
@@ -281,9 +281,9 @@ def _verify_metadata(
 
     written_by = metadata.get("written_by", {}).get("capellambse", "")
     if not written_by:
-        raise ValueError("Can't find 'written_by:capellambse' in metadata")
+        raise ValueError("Can't find 'written_by:capellambse' in metadata")  # noqa: TRY003
     if not _is_pep440(written_by):
-        raise ValueError(f"Malformed version number in metadata: {written_by}")
+        raise ValueError(f"Malformed version number in metadata: {written_by}")  # noqa: TRY003
 
     current = av.AwesomeVersion(
         imm.version("capellambse").partition("+")[0],
@@ -295,14 +295,14 @@ def _verify_metadata(
             ensure_strategy=av.AwesomeVersionStrategy.PEP440,
         )
         version_matches = current >= written_version
-    except Exception as err:
-        raise ValueError(
+    except Exception as err:  # noqa: BLE001
+        raise ValueError(  # noqa: TRY003
             "Cannot verify required capellambse version:"
             f" {type(err).__name__}: {err}"
         ) from None
 
     if not version_matches:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "This capellambse is too old for this YAML:"
             f" Need at least v{written_by}, but have only v{current})"
         )
@@ -311,21 +311,21 @@ def _verify_metadata(
     res_info = model.info.resources["\x00"]
     url = model_metadata.get("url")
     if url != res_info.url:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "Model URL mismatch:"
             f" YAML expects {url}, current is {res_info.url}"
         )
 
-    hash = model_metadata.get("revision")
-    if hash != res_info.rev_hash:
-        raise ValueError(
+    rev = model_metadata.get("revision")
+    if rev != res_info.rev_hash:
+        raise ValueError(  # noqa: TRY003
             "Model version mismatch:"
-            f" YAML expects {hash}, current is {res_info.rev_hash}"
+            f" YAML expects {rev}, current is {res_info.rev_hash}"
         )
 
     entrypoint = pathlib.PurePosixPath(model_metadata.get("entrypoint", ""))
     if entrypoint != model.info.entrypoint:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY003
             "Model entrypoint mismatch:"
             f" YAML expects {entrypoint}, current is {model.info.entrypoint}"
         )
@@ -360,7 +360,7 @@ def _operate_extend(
 ) -> cabc.Generator[_OperatorResult, t.Any, None]:
     for attr, value in extensions.items():
         if not isinstance(value, cabc.Iterable):
-            raise TypeError("values below `extend:*:` must be lists")
+            raise TypeError("values below `extend:*:` must be lists")  # noqa: TRY003
 
         yield from _create_complex_objects(promises, parent, attr, value)
 
@@ -376,7 +376,7 @@ def _operate_delete(
         try:
             target = getattr(parent, attr)
         except AttributeError:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot delete object:"
                 f" {type(parent).__name__} has no attribute {attr!r}"
             ) from None
@@ -384,13 +384,13 @@ def _operate_delete(
             delattr(parent, attr)
             continue
         if not isinstance(target, m.ElementListCouplingMixin):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Cannot delete object:"
                 f" {type(parent).__name__}.{attr} is not model-coupled"
             )
         for obj in objs:
             if isinstance(obj, Promise):
-                raise ValueError("Cannot use !promise in `delete:*:`")
+                raise TypeError("Cannot use !promise in `delete:*:`")  # noqa: TRY003
             if isinstance(obj, str):
                 obj = UUIDReference(helpers.UUIDString(obj))
             obj = _resolve({}, parent, obj)
@@ -401,7 +401,7 @@ def _operate_delete(
                     p_repr = parent._short_repr_()
                 else:
                     p_repr = repr(getattr(parent, "uuid", "<unknown>"))
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"No object {obj._short_repr_()} in {attr!r} of {p_repr}"
                 ) from None
             del target[idx]
@@ -440,13 +440,13 @@ def _operate_sync(
 ) -> cabc.Generator[_OperatorResult, t.Any, None]:
     for attr, value in modifications.items():
         if not isinstance(value, cabc.Iterable):
-            raise TypeError("values below `extend:*:` must be lists")
+            raise TypeError("values below `extend:*:` must be lists")  # noqa: TRY003
 
         for obj in value:
             try:
                 find_args = obj["find"]
             except KeyError:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     "Expected `find` key in sync object"
                 ) from None
             if isinstance(find_args, dict):
@@ -531,7 +531,7 @@ def _resolve_findby(
     attrs = dict(value.attributes)
     typehint = attrs.pop("_type", None)
     if not isinstance(typehint, str | type(None)):
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             f"Expected a string for !find {{_type: ...}},"
             f" got {type(typehint)}: {typehint!r}"
         )
@@ -617,17 +617,17 @@ def _create_complex_objects(
     try:
         target = getattr(parent, attr)
     except AttributeError:
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             "Cannot create object:"
             f" {type(parent).__name__} has no attribute {attr!r}"
         ) from None
     if not isinstance(target, m.ElementList):
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             "Cannot create object:"
             f" {type(parent).__name__}.{attr} is not a list"
         )
     if not isinstance(target, m.ElementListCouplingMixin):
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             "Cannot create object:"
             f" {type(parent).__name__}.{attr} is not model-coupled"
         )
@@ -688,7 +688,7 @@ def _create_complex_object(
         if isinstance(subval, cabc.Iterable):
             yield from _create_complex_objects(promises, obj, subkey, subval)
         else:
-            raise TypeError(f"Expected list, got {type(subval).__name__}")
+            raise TypeError(f"Expected list, got {type(subval).__name__}")  # noqa: TRY003
 
 
 @dataclasses.dataclass(frozen=True)
@@ -724,7 +724,7 @@ class UUIDReference:
 
     def __post_init__(self) -> None:
         if not helpers.is_uuid_string(self.uuid):
-            raise ValueError(f"Malformed `!uuid`: {self.uuid!r}")
+            raise ValueError(f"Malformed `!uuid`: {self.uuid!r}")  # noqa: TRY003
 
 
 @dataclasses.dataclass(frozen=True)
@@ -750,10 +750,7 @@ class YDMDumper(yaml.SafeDumper):
 
     def represent_newobj(self, data: t.Any) -> yaml.Node:
         assert isinstance(data, NewObject)
-        attrs = dict(data._kw)
-        if data._type_hint:
-            attrs["_type"] = data._type_hint
-        return self.represent_mapping("!new_object", attrs)
+        return self.represent_mapping("!new_object", data.asdict())
 
     def represent_findby(self, data: t.Any) -> yaml.Node:
         assert isinstance(data, FindBy)
@@ -777,39 +774,37 @@ class YDMLoader(yaml.SafeLoader):
 
     def construct_promise(self, node: yaml.Node) -> Promise:
         if not isinstance(node, yaml.ScalarNode):
-            raise TypeError("!promise only accepts scalar nodes")
+            raise TypeError("!promise only accepts scalar nodes")  # noqa: TRY003
         data = self.construct_scalar(node)
         if not isinstance(data, str):
-            raise TypeError("!promise only accepts string scalars")
+            raise TypeError("!promise only accepts string scalars")  # noqa: TRY003
         return Promise(data)
 
     def construct_uuidref(self, node: yaml.Node) -> UUIDReference:
         if not isinstance(node, yaml.ScalarNode):
-            raise TypeError("!uuid only accepts scalar nodes")
+            raise TypeError("!uuid only accepts scalar nodes")  # noqa: TRY003
         data = self.construct_scalar(node)
         if not helpers.is_uuid_string(data):
-            raise ValueError(f"Malformed UUID: {data}")
+            raise ValueError(f"Malformed UUID: {data}")  # noqa: TRY003
         return UUIDReference(data)
 
     def construct_newobj(self, node: yaml.Node) -> NewObject:
         if not isinstance(node, yaml.MappingNode):
-            raise TypeError("!new_object only accepts mapping nodes")
+            raise TypeError("!new_object only accepts mapping nodes")  # noqa: TRY003
         data = self.construct_mapping(node)
-        try:
-            _type = data.pop("_type")
-        except KeyError:
-            raise ValueError("!new_object requires a _type key") from None
-        return NewObject(_type, **t.cast(t.Any, data))
+        if not all(isinstance(i, str) for i in data):
+            raise TypeError("!new_object keys must be strings")  # noqa: TRY003
+        return NewObject.fromdict(t.cast("dict[str, t.Any]", data))
 
     def construct_findby(self, node: yaml.Node) -> FindBy:
         if not isinstance(node, yaml.MappingNode):
-            raise TypeError("!find only accepts mapping nodes")
+            raise TypeError("!find only accepts mapping nodes")  # noqa: TRY003
         data = self.construct_mapping(node)
-        return FindBy(t.cast(t.Any, data))
+        return FindBy(t.cast("t.Any", data))
 
     def construct_markup(self, node: yaml.Node) -> markupsafe.Markup:
         if not isinstance(node, yaml.ScalarNode):
-            raise TypeError("!html only accepts scalar nodes")
+            raise TypeError("!html only accepts scalar nodes")  # noqa: TRY003
         return markupsafe.Markup(self.construct_scalar(node))
 
 

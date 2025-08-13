@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import pathlib
+import typing as t
 
 import pytest
 from click import testing as clitest
@@ -11,6 +11,9 @@ import capellambse.metamodel as mm
 import capellambse.model as m
 from capellambse._scripts import validate as cli_main
 from capellambse.extensions import validation
+
+if t.TYPE_CHECKING:
+    import pathlib
 
 TEST_UUID = "da12377b-fb70-4441-8faa-3a5c153c5de2"
 TEST_RULE_ID = "Rule-001"

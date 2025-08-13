@@ -11,7 +11,6 @@ does.
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import contextlib
 import html.entities
 import io
@@ -23,6 +22,9 @@ import warnings
 
 import lxml.etree
 
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
 try:
     from capellambse._compiled import serialize as _native_serialize
 except ImportError:
@@ -33,7 +35,7 @@ except ImportError:
         raise
 
     def _native_serialize(*_1, **_2):  # type: ignore[misc]
-        raise TypeError("Native module is not available")
+        raise TypeError("Native module is not available")  # noqa: TRY003
 
     HAS_NATIVE = False
 else:
@@ -589,7 +591,7 @@ def _unmap_namespace(nsmap: cabc.Mapping[str, str], name: str) -> str:
         try:
             ns = nsmap[ns]
         except KeyError:
-            raise ValueError(f"Namespace not found: {ns!r}") from None
+            raise ValueError(f"Namespace not found: {ns!r}") from None  # noqa: TRY003
         assert ns
 
     tag = match.group(2)

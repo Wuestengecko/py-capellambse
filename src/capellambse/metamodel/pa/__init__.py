@@ -118,13 +118,13 @@ class PhysicalArchitecture(cs.ComponentArchitecture):
         pkg = self.function_pkg
         assert pkg is not None
         if not pkg.functions:
-            raise RuntimeError(f"Package {pkg._short_repr_()} is empty")
+            raise RuntimeError(f"Package {pkg._short_repr_()} is empty")  # noqa: TRY003
         return pkg.functions[0]
 
     @property
     def root_component(self) -> PhysicalComponent:
         if self.component_pkg is None:
-            raise m.BrokenModelError("No root PhysicalComponentPkg found")
+            raise m.BrokenModelError("No root PhysicalComponentPkg found")  # noqa: TRY003
         return self.component_pkg.components.by_is_actor(False, single=True)
 
     @property

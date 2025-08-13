@@ -4,10 +4,13 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import logging
 import re
+import typing as t
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +83,7 @@ class MarkerFactories(dict[str, MarkerFactory]):
                 func.__name__,
             )
             if not symbol_name.endswith("Mark"):
-                raise RuntimeError(f"Invalid marker name: {symbol_name}")
+                raise RuntimeError(f"Invalid marker name: {symbol_name}")  # noqa: TRY003
             self[symbol_name] = MarkerFactory(func, tuple(dependencies))
             return func
 
