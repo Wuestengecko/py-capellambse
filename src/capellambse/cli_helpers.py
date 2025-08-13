@@ -12,7 +12,6 @@ __all__ = [
     "loadinfo",
 ]
 
-import collections.abc as cabc
 import importlib.abc
 import importlib.resources as imr
 import json
@@ -25,6 +24,9 @@ import warnings
 
 import capellambse
 from capellambse import filehandler
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 LOGGER = logging.getLogger(__name__)
 
@@ -102,13 +104,13 @@ try:
 except ImportError:
     if not t.TYPE_CHECKING:
 
-        def ModelCLI(*__, **_):
+        def ModelCLI(*__, **_):  # noqa: N802
             """Raise a dependency error."""
-            raise RuntimeError("click is not installed")
+            raise RuntimeError("click is not installed")  # noqa: TRY003
 
-        def ModelInfoCLI(*__, **_):
+        def ModelInfoCLI(*__, **_):  # noqa: N802
             """Raise a dependency error."""
-            raise RuntimeError("click is not installed")
+            raise RuntimeError("click is not installed")  # noqa: TRY003
 
 
 def enumerate_known_models() -> cabc.Iterator[importlib.abc.Traversable]:
@@ -237,7 +239,7 @@ def loadinfo(value: str | os.PathLike[str]) -> dict[str, t.Any]:
         if isinstance(value, str):
             return _load_from_file(value)
 
-    raise TypeError("value must be a str or PathLike returning str")
+    raise TypeError("value must be a str or PathLike returning str")  # noqa: TRY003
 
 
 def _load_from_file(value: str) -> dict[str, t.Any]:
@@ -260,7 +262,7 @@ def _load_from_file(value: str) -> dict[str, t.Any]:
     if proto != "file":
         return {"path": value}
 
-    raise ValueError(
+    raise ValueError(  # noqa: TRY003
         "value is not a known model,"
         " nor contains valid JSON,"
         " nor is a valid FileHandler URL"

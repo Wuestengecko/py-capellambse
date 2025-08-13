@@ -5,13 +5,15 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import os
 import pathlib
 import typing as t
 
 from capellambse import helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import os
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ class LocalFileHandler(abc.FileHandler):
             return path.open("rb")
 
         if normpath in self.__transaction:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"File already written in this transaction: {normpath}"
             )
         self.__transaction.add(normpath)
@@ -70,7 +72,7 @@ class LocalFileHandler(abc.FileHandler):
 
         with super().write_transaction(**kw) as unused_kw:
             if self.__transaction is not None:
-                raise RuntimeError("Another transaction is already open")
+                raise RuntimeError("Another transaction is already open")  # noqa: TRY003
             self.__transaction = set()
 
             try:
@@ -115,11 +117,11 @@ def _tmpname(filename: pathlib.PurePosixPath) -> pathlib.PurePosixPath:
 
 class LocalFilePath(abc.FilePath[LocalFileHandler]):
     def is_dir(self) -> bool:
-        base = t.cast(pathlib.Path, self._parent.path)
+        base = t.cast("pathlib.Path", self._parent.path)
         path = base.joinpath(self._path).resolve()
         return path.is_dir()
 
     def is_file(self) -> bool:
-        base = t.cast(pathlib.Path, self._parent.path)
+        base = t.cast("pathlib.Path", self._parent.path)
         path = base.joinpath(self._path).resolve()
         return path.is_file()

@@ -26,13 +26,14 @@ import typing as t
 
 import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 from capellambse import helpers
 
 from . import E, U
 
 if t.TYPE_CHECKING:
+    from lxml import etree
+
     from . import _obj
 
 
@@ -88,7 +89,7 @@ class BasePOD(t.Generic[U]):
 
     def __set__(self, obj: t.Any, value: U | None) -> None:
         if not self.writable and self.attribute in obj._element.attrib:
-            raise TypeError(f"{self._qualname} is not writable")
+            raise TypeError(f"{self._qualname} is not writable")  # noqa: TRY003
 
         if value is not None and value != self.default:
             data = self._to_xml(obj, value)
@@ -105,7 +106,7 @@ class BasePOD(t.Generic[U]):
 
     def __set_name__(self, owner: type[t.Any], name: str) -> None:
         if self.__objclass__ is not None:
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"__set_name__ called twice on {self._qualname}"
             )
         self.__name__ = name
@@ -228,7 +229,7 @@ class IntPOD(BasePOD[int]):
     def _to_xml(self, obj: _obj.ModelElement, value: int, /) -> str | None:
         del obj
         if not isinstance(value, int):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{self._qualname} only accepts int,"
                 f" not {type(value).__name__}"
             )
@@ -264,18 +265,18 @@ class FloatPOD(BasePOD[float]):
         if isinstance(value, int):
             value = float(value)
         elif not isinstance(value, float):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{self._qualname} only accepts float or int,"
                 f" not {type(value).__name__}"
             )
         assert isinstance(value, float)
 
         if math.isnan(value):
-            raise ValueError("Cannot represent NaN")
+            raise ValueError("Cannot represent NaN")  # noqa: TRY003
         if value == math.inf:
             return "*"
         if value == -math.inf:
-            raise ValueError("Cannot represent negative infinity")
+            raise ValueError("Cannot represent negative infinity")  # noqa: TRY003
         return str(value)
 
 
@@ -316,7 +317,7 @@ class DatetimePOD(BasePOD[datetime.datetime | None]):
         del obj
         assert value is not None
         if not isinstance(value, datetime.datetime):
-            raise TypeError(f"Expected datetime instance, not {value!r}")
+            raise TypeError(f"Expected datetime instance, not {value!r}")  # noqa: TRY003
         if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
             value = value.astimezone()
 
@@ -369,7 +370,7 @@ class EnumPOD(BasePOD[E]):
             Whether to allow changing the value at runtime.
         """
         if not (isinstance(enumcls, type) and issubclass(enumcls, enum.Enum)):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"enumcls must be an Enum subclass, not {enumcls!r}"
             )
 
@@ -377,13 +378,13 @@ class EnumPOD(BasePOD[E]):
             try:
                 default = next(iter(enumcls.__members__.values()))
             except StopIteration:
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Enum class does not have any members: {enumcls!r}"
                 ) from None
         elif isinstance(default, str):
             default = enumcls[default]
         elif not isinstance(default, enumcls):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"'default' must be a member of 'enumcls', not {default!r}"
             )
         assert isinstance(default, enumcls)
@@ -443,13 +444,13 @@ class MultiStringPOD(BasePOD[cabc.MutableSequence[str]]):
         self, obj: _obj.ModelElement, value: str, /
     ) -> cabc.MutableSequence[str]:
         del obj, value
-        raise TypeError("Not used for this POD type")
+        raise TypeError("Not used for this POD type")  # noqa: TRY003
 
     def _to_xml(
         self, obj: _obj.ModelElement, value: cabc.MutableSequence[str], /
     ) -> str | None:
         del obj, value
-        raise TypeError("Not used for this POD type")
+        raise TypeError("Not used for this POD type")  # noqa: TRY003
 
 
 class _MultiPODValues(cabc.MutableSequence[str]):
@@ -477,7 +478,7 @@ class _MultiPODValues(cabc.MutableSequence[str]):
         self, idx: int | slice, value: str | cabc.Iterable[str], /
     ) -> None:
         if not isinstance(idx, int | slice):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "indices must be integers or slices, not {type(i).__name__}"
             )
 
@@ -493,12 +494,12 @@ class _MultiPODValues(cabc.MutableSequence[str]):
             if idx < 0:
                 idx += len(self)
                 if idx < 0:
-                    raise IndexError("assignment index out of range")
+                    raise IndexError("assignment index out of range")  # noqa: TRY003
 
             it = self._parent.iterchildren(self._tag)
             elem = next(itertools.islice(it, idx, idx + 1), None)
             if elem is None:
-                raise IndexError("assignment index out of range") from None
+                raise IndexError("assignment index out of range") from None  # noqa: TRY003
             elem.text = value
 
     def __delitem__(self, i: int | slice, /) -> None:

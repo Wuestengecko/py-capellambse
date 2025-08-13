@@ -4,7 +4,10 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
+import typing as t
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 COLORS = ("#ffdd87", "#91cc84", "#a5c2e6", "#f89f9f")
 LEGEND = (
@@ -117,7 +120,7 @@ def draw_bar(
     )
 
 
-def draw_diagrams_icon(x: float | int, y: float | int):
+def draw_diagrams_icon(x: float, y: float):
     """Create simple diagram icon (SVG string)."""
     return (
         '<g stroke="#555" stroke-width=".2">'
@@ -128,7 +131,7 @@ def draw_diagrams_icon(x: float | int, y: float | int):
     )
 
 
-def draw_objects_icon(x: float | int, y: float | int):
+def draw_objects_icon(x: float, y: float):
     """Create simple objects icon (SVG string)."""
     return (
         '<g stroke="#555" stroke-width=".3">'

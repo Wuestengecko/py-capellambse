@@ -3,12 +3,9 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import errno
 import itertools
 import logging
-import os
-import pathlib
 import re
 import typing as t
 import urllib.parse
@@ -19,6 +16,11 @@ import typing_extensions as te
 from capellambse import helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import os
+    import pathlib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +59,7 @@ class DownloadStream(t.BinaryIO):
     def __enter__(self) -> DownloadStream:
         return self
 
-    def __exit__(self, *args: t.Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
     def read(self, n: int = -1) -> bytes:
@@ -79,7 +81,7 @@ class DownloadStream(t.BinaryIO):
 
     def write(self, s: bytes | bytearray) -> int:  # type: ignore[override]
         del s
-        raise TypeError("Cannot write to a read-only stream")
+        raise TypeError("Cannot write to a read-only stream")  # noqa: TRY003
 
     def writable(self) -> bool:
         return False
@@ -157,12 +159,12 @@ class HTTPFileHandler(abc.FileHandler):
             the same file name escaping rules explained above.
         """
         if not isinstance(path, str):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "HTTPFileHandler requires a str path, not"
                 f" {type(path).__name__}"
             )
         if bool(username) != bool(password):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 "Either both username and password must be given, or neither"
             )
 
@@ -210,7 +212,7 @@ class HTTPFileHandler(abc.FileHandler):
         self, path: str | pathlib.PurePosixPath = ".", /
     ) -> cabc.Iterator[abc.FilePath[te.Self]]:
         del path
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             "Cannot list files on raw HTTP sources."
             " Maybe you forgot a 'git+' prefix?"
         )

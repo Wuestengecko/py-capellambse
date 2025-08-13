@@ -457,7 +457,7 @@ class PhysicalLink(
     @source.setter
     def source(self, end: AbstractPhysicalLinkEnd | None) -> None:
         if end is None:
-            raise TypeError(f"Cannot delete 'source' of {type(self).__name__}")
+            raise TypeError(f"Cannot delete 'source' of {type(self).__name__}")  # noqa: TRY003
 
         ends = self.ends
         if len(ends) == 0:
@@ -475,11 +475,11 @@ class PhysicalLink(
     @target.setter
     def target(self, end: AbstractPhysicalLinkEnd | None) -> None:
         if end is None:
-            raise TypeError(f"Cannot delete 'target' of {type(self).__name__}")
+            raise TypeError(f"Cannot delete 'target' of {type(self).__name__}")  # noqa: TRY003
 
         ends = self.ends
         if len(ends) == 0:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot set 'target' on a {type(self).__name__}"
                 " that has no 'source'"
             )

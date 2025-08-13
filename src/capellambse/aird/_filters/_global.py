@@ -5,13 +5,15 @@
 from __future__ import annotations
 
 import contextlib
-
-import lxml.etree
+import typing as t
 
 import capellambse.loader
 from capellambse import diagram, helpers
 
-from . import FilterArguments, composite, global_filter
+from . import FilterArguments, _composite, global_filter
+
+if t.TYPE_CHECKING:
+    import lxml.etree
 
 XT_CEX_FEX_ALLOCATION = (
     "org.polarsys.capella.core.data.fa"
@@ -67,7 +69,7 @@ def show_name_and_exchangeitems_fex(
 
         sort_items = args.params.get("sorted_exchangedItems", False)
         ex_items = _stringify_exchange_items(
-            obj, args.melodyloader, sort_items
+            obj, args.melodyloader, sort_items=sort_items
         )
         if ex_items:
             label_box.label += " " + ex_items
@@ -89,7 +91,7 @@ def show_exchangeitems_fex(
 
         sort_items = args.params.get("sorted_exchangedItems", False)
         exchange_items_label = _stringify_exchange_items(
-            obj, args.melodyloader, sort_items
+            obj, args.melodyloader, sort_items=sort_items
         )
         if exchange_items_label:
             label_box.label = exchange_items_label
@@ -159,8 +161,8 @@ def hide_all_empty_ports(
     del flt
     for dgobj in args.target_diagram:
         if isinstance(dgobj, diagram.Box) and dgobj.children:
-            composite.hide_empty_ports(
-                None, dgobj, classes=composite.PORT_CL_COMPONENT
+            _composite.hide_empty_ports(
+                None, dgobj, classes=_composite.PORT_CL_COMPONENT
             )
 
 
@@ -171,10 +173,11 @@ def hide_alloc_func_exch(
     """Hide functional exchanges that are allocated to a component exchange."""
     del flt
 
-    component_exchanges = []
-    for element in args.target_diagram:
-        if not element.hidden and element.styleclass == "ComponentExchange":
-            component_exchanges.append(element)
+    component_exchanges = [
+        e
+        for e in args.target_diagram
+        if not e.hidden and e.styleclass == "ComponentExchange"
+    ]
 
     for cex in component_exchanges:
         assert cex.uuid is not None
@@ -190,6 +193,7 @@ def hide_alloc_func_exch(
 def _stringify_exchange_items(
     obj: diagram.DiagramElement,
     melodyloader: capellambse.loader.MelodyLoader,
+    *,
     sort_items: bool = False,
 ) -> str:
     assert obj.uuid is not None
@@ -214,10 +218,9 @@ def _get_allocated_exchangeitem_names(
     for obj_id in try_ids:
         try:
             elm = melodyloader[obj_id]
+            break
         except KeyError:
             pass
-        else:
-            break
     else:
         return (None, [])
 

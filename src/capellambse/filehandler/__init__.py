@@ -71,7 +71,7 @@ def split_protocol(uri: str | os.PathLike) -> tuple[str, str | os.PathLike]:
             if match := re.match(r"^file://(?:localhost)?/", uri):
                 uri = uri[len(match.group(0)) :]
             else:
-                raise ValueError(f"Invalid non-local file URI: {uri}")
+                raise ValueError(f"Invalid non-local file URI: {uri}")  # noqa: TRY003
             uri = pathlib.Path(
                 "/" * (not sys.platform.startswith("win")) + uri
             )
@@ -86,7 +86,7 @@ def load_entrypoint(handler_name: str) -> type[FileHandler]:
         group="capellambse.filehandler", name=handler_name
     )
     if not eps:
-        raise ValueError(f"Unknown file handler {handler_name}")
+        raise ValueError(f"Unknown file handler {handler_name}")  # noqa: TRY003
     return next(iter(eps)).load()
 
 

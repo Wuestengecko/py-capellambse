@@ -195,7 +195,7 @@ class Namespace:
         version_precision: int = 1,
     ) -> None:
         if version_precision <= 0:
-            raise ValueError("Version precision cannot be negative")
+            raise ValueError("Version precision cannot be negative")  # noqa: TRY003
 
         object.__setattr__(self, "uri", uri)
         object.__setattr__(self, "alias", alias)
@@ -204,11 +204,11 @@ class Namespace:
 
         is_versioned = "{VERSION}" in uri
         if is_versioned and maxver is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Versioned namespaces must declare their supported 'maxver'"
             )
         if not is_versioned and maxver is not None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Unversioned namespaces cannot declare a supported 'maxver'"
             )
 
@@ -268,7 +268,7 @@ class Namespace:
         self, clsname: str, version: str | None = None
     ) -> type[ModelObject]:
         if "{VERSION}" in self.uri and not version:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Versioned namespace, but no version requested: {self.uri}"
             )
 
@@ -294,7 +294,7 @@ class Namespace:
         maxver: str | None,
     ) -> None:
         if cls.__capella_namespace__ is not self:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Cannot register class {cls.__name__!r}"
                 f" in Namespace {self.uri!r},"
                 f" because it belongs to {cls.__capella_namespace__.uri!r}"
@@ -443,7 +443,7 @@ class _ModelElementMeta(abc.ABCMeta):
             classes can be instantiated, not the abstract class itself.
         """
         if "__capella_namespace__" in namespace:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot create class {name!r}:"
                 " Invalid declaration of __capella_namespace__ in class body"
             )
@@ -464,7 +464,7 @@ class _ModelElementMeta(abc.ABCMeta):
 
         if eq is not None:
             if "__eq__" in namespace:
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Cannot generate __eq__ for {name!r}:"
                     f" method already defined in class body"
                 )
@@ -482,7 +482,7 @@ class _ModelElementMeta(abc.ABCMeta):
             cls_mod = importlib.import_module(modname)
             auto_ns = getattr(cls_mod, "NS", None)
             if not isinstance(auto_ns, Namespace):
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Cannot create class {name!r}: No namespace\n"
                     "\n"
                     f"No Namespace found at {modname}.NS,\n"
@@ -661,7 +661,7 @@ class ModelElement(metaclass=_ModelElementMeta):
         while obj := getattr(obj, "parent", None):
             if isinstance(obj, mm.cs.BlockArchitecture):
                 return obj
-        raise AttributeError(
+        raise AttributeError(  # noqa: TRY003
             f"No parent layer found for {self._short_repr_()}"
         )
 
@@ -685,7 +685,7 @@ class ModelElement(metaclass=_ModelElementMeta):
         **kw: t.Any,
     ) -> None:
         if type(self).__capella_abstract__:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} is an abstract class"
                 " and cannot be instantiated directly"
             )
@@ -698,13 +698,13 @@ class ModelElement(metaclass=_ModelElementMeta):
         missing_attrs = all_required_attrs - frozenset(kw) - {"uuid", "xtype"}
         if missing_attrs:
             mattrs = ", ".join(sorted(missing_attrs))
-            raise TypeError(f"Missing required keyword arguments: {mattrs}")
+            raise TypeError(f"Missing required keyword arguments: {mattrs}")  # noqa: TRY003
 
         super().__init__()
         if xmltag is None:
             xmltag = self._xmltag
         if xmltag is None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot instantiate {type(self).__name__} directly"
             )
 
@@ -732,7 +732,7 @@ class ModelElement(metaclass=_ModelElementMeta):
                     getattr(type(self), key),
                     _descriptors.Accessor | _pods.BasePOD,
                 ):
-                    raise TypeError(
+                    raise TypeError(  # noqa: TRY003
                         f"Cannot set {key!r} on {type(self).__name__}"
                     )
                 setattr(self, key, val)
@@ -745,7 +745,7 @@ class ModelElement(metaclass=_ModelElementMeta):
         if attr.startswith("_") or hasattr(type(self), attr):
             super().__setattr__(attr, value)
         else:
-            raise AttributeError(
+            raise AttributeError(  # noqa: TRY003
                 f"{attr!r} isn't defined on {type(self).__name__}"
             )
 
@@ -1062,7 +1062,7 @@ class ModelElement(metaclass=_ModelElementMeta):
 
         @name.setter
         def name(self, _: str) -> None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} cannot have a '.name',"
                 " please update your code to check if the field exists or"
                 " if the object subclasses modellingcore.AbstractNamedElement"
@@ -1083,7 +1083,7 @@ class ModelElement(metaclass=_ModelElementMeta):
 
         @description.setter
         def description(self, _: str) -> None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} cannot have a '.description',"
                 " please update your code to check if the field exists or"
                 " if the object subclasses capellacore.CapellaElement"
@@ -1104,7 +1104,7 @@ class ModelElement(metaclass=_ModelElementMeta):
 
         @summary.setter
         def summary(self, _: str) -> None:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"{type(self).__name__} cannot have a '.summary',"
                 " please update your code to check if the field exists or"
                 " if the object subclasses capellacore.CapellaElement"
@@ -1150,7 +1150,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
             for i, e in enumerate(self._elements):
                 ecls = model.resolve_class(e)
                 if not issubclass(elemclass, ecls):
-                    raise TypeError(
+                    raise TypeError(  # noqa: TRY003
                         f"BUG: Configured elemclass {elemclass.__name__!r}"
                         f" is not a subclass of {ecls.__name__!r}"
                         f" (found at index {i})"
@@ -1182,7 +1182,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
         if not isinstance(other, ElementList):
             return NotImplemented
         if self._model is not other._model:
-            raise ValueError("Cannot add ElementLists from different models")
+            raise ValueError("Cannot add ElementLists from different models")  # noqa: TRY003
 
         if self._elemclass is other._elemclass is not ModelElement:
             elemclass: type[T] | None = self._elemclass
@@ -1379,7 +1379,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
 
     def _mapkey(self, obj: T) -> t.Any:
         if self.__mapkey is None:
-            raise TypeError("This list cannot act as a mapping")
+            raise TypeError("This list cannot act as a mapping")  # noqa: TRY003
 
         mapkey = operator.attrgetter(self.__mapkey)
         try:
@@ -1400,12 +1400,12 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
             Get or set the mapping value behind the target object.
         """
         if self.__mapkey is None:
-            raise TypeError("This list cannot act as a mapping")
+            raise TypeError("This list cannot act as a mapping")  # noqa: TRY003
 
         mapkey = operator.attrgetter(self.__mapkey)
         candidates = [i for i in self if mapkey(i) == key]
         if len(candidates) > 1:
-            raise ValueError(f"Multiple matches for key {key!r}")
+            raise ValueError(f"Multiple matches for key {key!r}")  # noqa: TRY003
         if not candidates:
             raise KeyError(key)
         return candidates[0]
@@ -1456,17 +1456,17 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
 
     def insert(self, index: int, value: t.Any) -> None:
         if not isinstance(value, ModelObject):
-            raise TypeError("Cannot create elements: List is not coupled")
+            raise TypeError("Cannot create elements: List is not coupled")  # noqa: TRY003
         elm: etree._Element = value._element
         self._elements.insert(index, elm)
 
     def create(self, typehint: str | None = None, /, **kw: t.Any) -> T:
         del typehint, kw
-        raise TypeError("Cannot create elements: List is not coupled")
+        raise TypeError("Cannot create elements: List is not coupled")  # noqa: TRY003
 
     def create_singleattr(self, arg: t.Any) -> T:
         del arg
-        raise TypeError("Cannot create elements: List is not coupled")
+        raise TypeError("Cannot create elements: List is not coupled")  # noqa: TRY003
 
     def delete_all(self, **kw: t.Any) -> None:
         """Delete all matching objects from the model."""
@@ -1551,7 +1551,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
                     newelems.append(v._element)
                     classes.add(type(v))
                 else:
-                    raise TypeError(
+                    raise TypeError(  # noqa: TRY003
                         f"Map function must return a model element or a list"
                         f" of model elements, not {v!r}"
                     )
@@ -1689,7 +1689,7 @@ class _ListFilter(t.Generic[T]):
             not i or (i.startswith("_") and i not in self.__special_filterable)
             for i in attrs
         ):
-            raise ValueError(f"Invalid filter attribute: {self._attr}")
+            raise ValueError(f"Invalid filter attribute: {self._attr}")  # noqa: TRY003
 
         for elem in self._parent._elements:
             o: t.Any = wrap_xml(self._parent._model, elem)
@@ -1777,7 +1777,7 @@ class _ListFilter(t.Generic[T]):
             return self._parent._newlist(elements)
         if len(elements) > 1:
             value = values[0] if len(values) == 1 else values
-            raise KeyError(f"Multiple matches for {value!r}")
+            raise KeyError(f"Multiple matches for {value!r}")  # noqa: TRY003
         if len(elements) == 0:
             raise KeyError(values[0] if len(values) == 1 else values)
         return wrap_xml(self._parent._model, elements[0])
@@ -1808,9 +1808,9 @@ class _ListFilter(t.Generic[T]):
 
     def __getattr__(self, attr: str) -> te.Self:
         if "." in attr:
-            raise AttributeError(f"Invalid filter attribute name: {attr}")
+            raise AttributeError(f"Invalid filter attribute name: {attr}")  # noqa: TRY003
         if attr.startswith("_") and attr not in self.__special_filterable:
-            raise AttributeError(f"Invalid filter attribute name: {attr}")
+            raise AttributeError(f"Invalid filter attribute name: {attr}")  # noqa: TRY003
 
         if attr == "class":
             attr = "__class__"
@@ -1985,7 +1985,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
             isinstance(acc, _descriptors.WritableAccessor)
             or hasattr(acc, "__set__")
         ):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Parent accessor does not support overwriting: {acc!r}"
             )
 
@@ -1997,7 +1997,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
         new_objs[index] = value
 
         if self.fixed_length and len(new_objs) != self.fixed_length:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Cannot set: List must stay at length {self.fixed_length}"
             )
 
@@ -2005,7 +2005,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
 
     def __delitem__(self, index: int | slice) -> None:
         if self.fixed_length and len(self) <= self.fixed_length:
-            raise TypeError("Cannot delete from a fixed-length list")
+            raise TypeError("Cannot delete from a fixed-length list")  # noqa: TRY003
 
         assert self._parent is not None
         acc = type(self)._accessor
@@ -2013,7 +2013,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
             isinstance(acc, _descriptors.WritableAccessor)
             or hasattr(acc, "delete")
         ):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Parent accessor does not support deleting items: {acc!r}"
             )
         if not isinstance(index, slice):
@@ -2071,7 +2071,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
         acc = type(self)._accessor
         single_attr = getattr(acc, "single_attr", None)
         if not isinstance(single_attr, str):
-            raise TypeError("Cannot create object from a single attribute")
+            raise TypeError("Cannot create object from a single attribute")  # noqa: TRY003
 
         marker = _descriptors.NewObject("", **{single_attr: arg})
         return self._insert(len(self), marker)
@@ -2081,7 +2081,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
 
     def _insert(self, index: int, value: t.Any) -> T:
         if self.fixed_length and len(self) >= self.fixed_length:
-            raise TypeError("Cannot insert into a fixed-length list")
+            raise TypeError("Cannot insert into a fixed-length list")  # noqa: TRY003
 
         assert self._parent is not None
         acc = type(self)._accessor
@@ -2089,7 +2089,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
         if not isinstance(value, ModelElement | _descriptors.NewObject):
             single_attr = getattr(acc, "single_attr", None)
             if not isinstance(single_attr, str):
-                raise TypeError("Cannot create object from a single attribute")
+                raise TypeError("Cannot create object from a single attribute")  # noqa: TRY003
             value = _descriptors.NewObject("", **{single_attr: value})
 
         if isinstance(acc, _descriptors.WritableAccessor):
@@ -2101,7 +2101,7 @@ class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
             value = acc.insert(self, index, value)
 
         else:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Parent accessor does not support item insertion: {acc!r}"
             )
 
@@ -2119,14 +2119,14 @@ def enumerate_namespaces() -> tuple[Namespace, ...]:
 
         nsobj = i.load()
         if not isinstance(nsobj, Namespace):
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 "Found non-Namespace object at entrypoint"
                 f" {i.name!r} in group {i.group!r}: {nsobj!r}"
             )
         namespaces.append(nsobj)
 
     if not has_base_metamodel:
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY003
             "Did not find the base metamodel in enumerate_namespaces()!"
             " Check that capellambse is installed properly."
         )
@@ -2190,7 +2190,7 @@ def resolve_class_name(uclsname: UnresolvedClassName, /) -> ClassName:
                 if i.alias == ns or i.match_uri(ns)
             )
         except StopIteration:
-            raise ValueError(f"Namespace not found: {ns}") from None
+            raise ValueError(f"Namespace not found: {ns}") from None  # noqa: TRY003
         else:
             return (ns_obj, clsname)
 
@@ -2200,18 +2200,18 @@ def resolve_class_name(uclsname: UnresolvedClassName, /) -> ClassName:
             if clsname in ns_obj:
                 classes.append((ns_obj, clsname))
         if len(classes) < 1:
-            raise ValueError(f"Class not found: {uclsname!r}")
+            raise ValueError(f"Class not found: {uclsname!r}")  # noqa: TRY003
         if len(classes) > 1:
             if not ns:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"Multiple classes {clsname!r} found, specify namespace"
                 )
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Multiple classes {clsname!r} found in namespace {ns}"
             )
         return classes[0]
 
-    raise TypeError(f"Malformed class name: {uclsname!r}")
+    raise TypeError(f"Malformed class name: {uclsname!r}")  # noqa: TRY003
 
 
 @t.overload
@@ -2250,20 +2250,20 @@ def wrap_xml(
         try:
             ns: Namespace = type.__capella_namespace__
         except AttributeError:
-            raise TypeError(
+            raise TypeError(  # noqa: TRY003
                 f"Class does not belong to a namespace: {type.__name__}"
             ) from None
 
         if ns.uri.startswith(VIRTUAL_NAMESPACE_PREFIX):
             if not issubclass(type, cls):
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Requested virtual type {type.__name__!r}"
                     f" is not a subtype of declared type {cls.__name__!r}"
                     f" for element with ID {element.get('id')!r}"
                 )
             cls = type
         elif type is not ModelElement and not issubclass(cls, type):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY003
                 f"Class mismatch: requested {type!r}, but found {cls!r} in XML"
             )
 
@@ -2300,7 +2300,7 @@ def find_wrapper(typehint: str) -> tuple[type[ModelObject], ...]:
             elif v:
                 namespaces.append((i, v))
         if not namespaces:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Unknown namespace: {qname.namespace!r}."
                 " Check that relevant extensions are installed properly."
             )
@@ -2311,7 +2311,7 @@ def find_wrapper(typehint: str) -> tuple[type[ModelObject], ...]:
             (i, i.maxver) for i in enumerate_namespaces() if i.alias == nsname
         ]
         if not namespaces:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"Unknown namespace alias: {nsname!r}."
                 " Check that relevant extensions are installed properly."
             )

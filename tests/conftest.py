@@ -19,7 +19,7 @@ if not any(
     i.module.startswith("capellambse.extensions.")
     for i in imm.entry_points(group="capellambse.model_extensions")
 ):
-    raise RuntimeError(
+    raise RuntimeError(  # noqa: TRY003
         "Built-in model extensions are not loaded,"
         " is capellambse installed properly?"
     )
