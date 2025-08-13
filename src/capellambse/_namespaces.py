@@ -49,7 +49,7 @@ class Plugin:
 
     def __post_init__(self) -> None:
         if self.version is not None and self.viewpoint is None:
-            raise TypeError("Versioned plugins require a viewpoint")
+            raise TypeError("Versioned plugins require a viewpoint")  # noqa: TRY003
 
     @property
     def min_version(self) -> str | None:
@@ -69,7 +69,7 @@ class Plugin:
 
     def __le__(self, other: Plugin) -> bool:
         if self.version is None:
-            raise AttributeError(f"Plugin '{self.name}' has no version")
+            raise AttributeError(f"Plugin '{self.name}' has no version")  # noqa: TRY003
 
         if isinstance(other.version, tuple):
             assert all(isinstance(o, str) for o in other.version)
@@ -152,7 +152,7 @@ def get_namespace_prefix(url: str) -> str:
     if not matched_plugins:
         raise UnsupportedPluginError(url)
     if len(matched_plugins) != 1:
-        raise RuntimeError(f"Ambiguous namespace {url!r}: {matched_plugins}")
+        raise RuntimeError(f"Ambiguous namespace {url!r}: {matched_plugins}")  # noqa: TRY003
     prefix, plugin = matched_plugins[0]
 
     if not plugin.matches_version(version):

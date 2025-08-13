@@ -35,15 +35,15 @@ def from_xml(ebd: c.ElementBuilder) -> diagram.DiagramElement:
     """Deserialize a semantic element."""
     uid = ebd.data_element.attrib.get("element")
     if uid is None:
-        raise c.SkipObject()
+        raise c.SkipObject
 
     diag_element = ebd.melodyloader.follow_link(ebd.data_element, uid)
     if diag_element.get(c.ATT_XMT) in NO_RENDER_XMT:
-        raise c.SkipObject()
+        raise c.SkipObject
 
     target = next(diag_element.iterchildren("target"), None)
     if target is None:
-        raise c.SkipObject()
+        raise c.SkipObject
     needed_target_attrib = frozenset({"href", c.ATT_XMT})
     actual_target_attrib = set(target.attrib) & needed_target_attrib
     if actual_target_attrib != needed_target_attrib:
@@ -52,14 +52,14 @@ def from_xml(ebd: c.ElementBuilder) -> diagram.DiagramElement:
             ", ".join(actual_target_attrib ^ needed_target_attrib),
             uid,
         )
-        raise c.SkipObject()
+        raise c.SkipObject
 
     styleclass = target.get(c.ATT_XMT)
     assert isinstance(styleclass, str)
     try:
         styleclass = styleclass.split(":")[1]
     except IndexError:
-        raise ValueError(f"Invalid target type {styleclass}") from None
+        raise ValueError(f"Invalid target type {styleclass}") from None  # noqa: TRY003
 
     try:
         styleclass, drawtype = STYLECLASS_LOOKUP[styleclass]
@@ -82,7 +82,7 @@ def from_xml(ebd: c.ElementBuilder) -> diagram.DiagramElement:
             ebd.melodyloader.follow_link(target, target.attrib["href"])
         ]
     elif melodyobjs[0] is None:
-        raise c.SkipObject()
+        raise c.SkipObject
 
     seb = c.SemanticElementBuilder(
         target_diagram=ebd.target_diagram,
@@ -122,7 +122,7 @@ class FactorySelector:
         elif seb.data_element.tag == "edges":
             factory = self.edge
         else:
-            raise ValueError(f"Unknown element type {seb.data_element.tag}")
+            raise ValueError(f"Unknown element type {seb.data_element.tag}")  # noqa: TRY003
         return factory(seb)
 
 

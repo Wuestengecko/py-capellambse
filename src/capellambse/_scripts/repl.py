@@ -51,7 +51,7 @@ try:
             try:
                 histfile.rename(backupfile)
             except OSError as err:
-                logger.error(
+                logger.error(  # noqa: TRY400
                     "Could not rename history file, disabling history saving: %s: %s",
                     type(err).__name__,
                     err,
@@ -338,7 +338,7 @@ def fzf(
     >>> obj = fzf(model.search("ComponentExchange"), "target.parent.name")
     """
 
-    def repr(obj: object) -> str:
+    def _repr(obj: object) -> str:
         return getattr(obj, "_short_repr_", obj.__repr__)()
 
     binary = shutil.which("fzf")
@@ -348,7 +348,7 @@ def fzf(
 
     getter = operator.attrgetter(attr)
 
-    entries = [(str(getter(i)).replace("\0", ""), repr(i)) for i in elements]
+    entries = [(str(getter(i)).replace("\0", ""), _repr(i)) for i in elements]
     maxlen = max(len(i[0]) for i in entries)
     maxlen = min(maxlen, 40)
     fzf_input = "\0".join(
@@ -371,5 +371,5 @@ def fzf(
         return None
     else:
         selected = elements[int(proc.stdout.strip().split(" ", 1)[0])]
-        print(repr(selected))
+        print(_repr(selected))
         return selected
