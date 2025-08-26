@@ -433,7 +433,9 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
                     )
 
         render = self.__render_fresh(params)
-        return _run_converter_chain(chain, render, pretty_print=pretty_print)
+        return _run_converter_chain(
+            chain, render, pretty_print=pretty_print, **params
+        )
 
     def save(
         self,
@@ -967,6 +969,7 @@ def convert_format(
     /,
     *,
     pretty_print: bool = False,
+    **params: t.Any,
 ) -> t.Any:
     """Convert between different image formats.
 
@@ -982,6 +985,8 @@ def convert_format(
     pretty_print
         Whether to instruct the converters to pretty-print their output.
         Only relevant for text-based formats like SVG.
+    params
+        Additional format-specific render parameters, if applicable.
 
     Returns
     -------
@@ -1006,13 +1011,16 @@ def convert_format(
     if not chain or getattr(chain[-1], "depends", None) is not source:
         raise ValueError(f"Cannot convert from {sourcefmt} to {targetfmt}")
 
-    return _run_converter_chain(chain, data, pretty_print=pretty_print)
+    return _run_converter_chain(
+        chain, data, pretty_print=pretty_print, **params
+    )
 
 
 def _run_converter_chain(
     chain: list[DiagramConverter],
     data: t.Any,
     pretty_print: bool = False,
+    **params: t.Any,
 ) -> t.Any:
     for conv in reversed(chain):
         LOGGER.debug("Executing format converter %r", conv)
