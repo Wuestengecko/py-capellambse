@@ -568,25 +568,22 @@ class GitFileHandler(abc.FileHandler):
         git_env = os.environ.copy()
         git_cmd = ["git"]
 
-        if not os.environ.get("GIT_ASKPASS"):
-            path_to_askpass = (
-                pathlib.Path(__file__).parent / "git_askpass.py"
-            ).absolute()
-
-            git_env["GIT_ASKPASS"] = str(path_to_askpass)
-
-            try:
-                os.chmod(path_to_askpass, 0o755)
-            except OSError:
-                LOGGER.info(
-                    "Setting permission 755 for GIT_ASKPASS file failed"
-                )
-
         if self.username and self.password:
             git_env["GIT_USERNAME"] = self.username
             git_env["GIT_PASSWORD"] = self.password
 
-            git_cmd += ["-c", "credential.helper="]
+            credhelper = (
+                pathlib.Path(__file__)
+                .parent.joinpath("git_credhelper.py")
+                .resolve()
+            )
+            try:
+                os.chmod(credhelper, 0o755)
+            except OSError:
+                LOGGER.info(
+                    "Setting permission 755 for GIT_ASKPASS file failed"
+                )
+            git_cmd += ["-c", f"credential.helper={credhelper}"]
 
         if self.identity_file and self.known_hosts_file:
             ssh_command = [
