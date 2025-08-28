@@ -2,13 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [build-system]
-requires = [
-  "setuptools>=77",
-  "setuptools-rust",
-  "setuptools-scm[toml]>=3.4",
-  "wheel",
-]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.9,<2.0"]
+build-backend = "maturin"
 
 [project]
 dynamic = ["version"]
@@ -137,6 +132,7 @@ dev = [
   "capellambse-context-diagrams>=0.7.12",
   "docformatter[tomli]==1.7.7",
   "jupyterlab==4.4.7",
+  "maturin>=1.9.6",
   "mypy==1.15.0",
   "pandas>=2.3.0",
   "pre-commit==4.3.0",
@@ -222,6 +218,10 @@ py_limited_api = "cp310"
 [tool.docformatter]
 wrap-descriptions = 72
 wrap-summaries = 79
+
+[tool.maturin]
+module-name = "capellambse._compiled"
+python-source = "src"
 
 [tool.mypy]
 check_untyped_defs = true
