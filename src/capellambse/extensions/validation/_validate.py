@@ -25,11 +25,12 @@ import logging
 import sys
 import typing as t
 
-from lxml import etree
-
 import capellambse
 import capellambse.metamodel as mm
 import capellambse.model as m
+
+if t.TYPE_CHECKING:
+    from lxml import etree
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -111,7 +112,7 @@ def virtual_type(
     real_type: str | type[_T_co],
 ) -> cabc.Callable[[cabc.Callable[[_T_co], bool]], VirtualType[_T_co]]:
     if isinstance(real_type, str):
-        (cls,) = t.cast(tuple[type[_T_co], ...], m.find_wrapper(real_type))
+        (cls,) = t.cast("tuple[type[_T_co], ...]", m.find_wrapper(real_type))
     else:
         cls = real_type
 
@@ -431,15 +432,11 @@ class ModelValidation:
 
     def validate(self) -> Results:
         """Execute all registered validation rules and store results."""
-        all_results = []
-        for rule_ in _VALIDATION_RULES.values():
-            for obj in rule_.find_objects(self._model):
-                all_results.append(
-                    (
-                        (rule_, obj.uuid),
-                        Result(rule_, obj, rule_.validate(obj)),
-                    )
-                )
+        all_results = [
+            ((rule_, obj.uuid), Result(rule_, obj, rule_.validate(obj)))
+            for rule_ in _VALIDATION_RULES.values()
+            for obj in rule_.find_objects(self._model)
+        ]
         return Results(all_results)
 
     def search(self, /, *typenames: str) -> m.ElementList[t.Any]:
@@ -523,15 +520,11 @@ class ElementValidation(ObjectValidation):
     def validate(self) -> Results:
         """Validate this element against the rules that apply to it."""
         obj = self.parent
-        all_results = []
-        for rule_ in _VALIDATION_RULES.values():
-            if rule_.applies_to(obj):
-                all_results.append(
-                    (
-                        (rule_, obj.uuid),
-                        Result(rule_, obj, rule_.validate(obj)),
-                    )
-                )
+        all_results = [
+            ((rule_, obj.uuid), Result(rule_, obj, rule_.validate(obj)))
+            for rule_ in _VALIDATION_RULES.values()
+            if rule_.applies_to(obj)
+        ]
         return Results(all_results)
 
 

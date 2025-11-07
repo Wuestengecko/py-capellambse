@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import contextlib
 import datetime
 import itertools
@@ -20,6 +19,9 @@ import capellambse
 
 from . import capellarequirements as cr
 from . import requirements as rq
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 NS = "http://www.omg.org/spec/ReqIF/20110401/reqif.xsd"
 SCHEMA = "https://www.omg.org/spec/ReqIF/20110401/reqif.xsd"

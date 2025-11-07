@@ -5,13 +5,15 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import os
 import pathlib
 import typing as t
 
 from capellambse import helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import os
 
 LOGGER = logging.getLogger(__name__)
 
@@ -115,11 +117,11 @@ def _tmpname(filename: pathlib.PurePosixPath) -> pathlib.PurePosixPath:
 
 class LocalFilePath(abc.FilePath[LocalFileHandler]):
     def is_dir(self) -> bool:
-        base = t.cast(pathlib.Path, self._parent.path)
+        base = t.cast("pathlib.Path", self._parent.path)
         path = base.joinpath(self._path).resolve()
         return path.is_dir()
 
     def is_file(self) -> bool:
-        base = t.cast(pathlib.Path, self._parent.path)
+        base = t.cast("pathlib.Path", self._parent.path)
         path = base.joinpath(self._path).resolve()
         return path.is_file()

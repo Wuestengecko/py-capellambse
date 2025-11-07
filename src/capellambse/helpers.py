@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import array
-import collections.abc as cabc
 import contextlib
 import errno
 import functools
@@ -37,6 +36,9 @@ from PIL import ImageFont
 import capellambse
 import capellambse._namespaces as _n
 import capellambse.filehandler as fh
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 if sys.platform.startswith("win"):
     import msvcrt
@@ -263,7 +265,7 @@ if sys.platform.startswith("win"):
             while True:
                 try:
                     msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
-                except OSError as err:
+                except OSError as err:  # noqa: PERF203
                     if err.errno == errno.EDEADLOCK:
                         if not logged:
                             LOGGER.debug("Waiting for lock file %s", file)
@@ -298,15 +300,13 @@ else:
 @functools.lru_cache(maxsize=8)
 def load_font(fonttype: str, size: int) -> ImageFont.FreeTypeFont:
     for name in (fonttype, fonttype.upper(), fonttype.lower()):
-        try:
+        with contextlib.suppress(OSError):
             return ImageFont.truetype(name, size)
-        except OSError:
-            pass
 
     fontfile = imr.files(capellambse).joinpath(FALLBACK_FONT)
     with fontfile.open("rb") as fallback_font:
         te.assert_type(fallback_font, t.IO[bytes])
-        fallback_font = t.cast(t.BinaryIO, fallback_font)
+        fallback_font = t.cast("t.BinaryIO", fallback_font)
         return ImageFont.truetype(fallback_font, size)
 
 
@@ -345,7 +345,7 @@ def extent_func(
 
 def get_text_extent(
     text: str,
-    width: float | int = math.inf,
+    width: float = math.inf,
     fonttype: str = "OpenSans-Regular.ttf",
     fontsize: int = DEFAULT_FONT_SIZE,
 ) -> tuple[float, float]:
@@ -486,7 +486,7 @@ def ssvparse(
     return values
 
 
-def word_wrap(text: str, width: float | int) -> list[str]:
+def word_wrap(text: str, width: float) -> list[str]:
     """Perform word wrapping for proportional fonts.
 
     Whitespace at the beginning of input lines is preserved, but other
@@ -506,7 +506,7 @@ def word_wrap(text: str, width: float | int) -> list[str]:
         A list of strings, one for each line, after wrapping.
     """
 
-    def split_into_lines(line: str, width: float | int) -> list[str]:
+    def split_into_lines(line: str, width: float) -> list[str]:
         words = line.split()
         if not words:
             return [line]
@@ -763,7 +763,7 @@ def unembed_images(
                 dotproject = hdl.read_file(".project")
                 ptree = etree.fromstring(dotproject)
                 (hdlname,) = ptree.xpath("/projectDescription/name/text()")
-            except Exception:
+            except Exception:  # noqa: BLE001
                 LOGGER.debug("Could not read project name of default handler")
                 return
 
@@ -808,10 +808,10 @@ def process_html_fragments(
     rawnodes = lxml.html.fragments_fromstring(markup)
     if rawnodes and isinstance(rawnodes[0], str):
         firstnode = html.escape(rawnodes[0])
-        nodes = t.cast(list[etree._Element], rawnodes[1:])
+        nodes = t.cast("list[etree._Element]", rawnodes[1:])
     else:
         firstnode = ""
-        nodes = t.cast(list[etree._Element], rawnodes)
+        nodes = t.cast("list[etree._Element]", rawnodes)
 
     for node in itertools.chain.from_iterable(
         map(operator.methodcaller("iter"), nodes)

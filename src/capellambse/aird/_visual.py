@@ -9,13 +9,16 @@ hyperlinks.
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import logging
+import typing as t
 
 from capellambse import diagram
 
 from . import _common as c
 from . import _edge_factories, _styling
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 LOGGER = logging.getLogger(__name__)
 

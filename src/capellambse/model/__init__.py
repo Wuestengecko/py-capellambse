@@ -4,12 +4,14 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import enum
 import functools
 import sys
 import typing as t
 import warnings
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -78,7 +80,7 @@ def attr_equal(attr: str) -> cabc.Callable[[type[T]], type[T]]:
             return orig_eq(self, other)
 
         cls.__eq__ = new_eq  # type: ignore[method-assign]
-        cls.__hash__ = None  # type: ignore
+        cls.__hash__ = None  # type: ignore[assignment, method-assign]
 
         return cls
 

@@ -3,12 +3,9 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import errno
 import itertools
 import logging
-import os
-import pathlib
 import re
 import typing as t
 import urllib.parse
@@ -19,6 +16,11 @@ import typing_extensions as te
 from capellambse import helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import os
+    import pathlib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,10 +56,10 @@ class DownloadStream(t.BinaryIO):
         )
         self.__buffer = memoryview(b"")
 
-    def __enter__(self) -> DownloadStream:
+    def __enter__(self) -> te.Self:
         return self
 
-    def __exit__(self, *args: t.Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
     def read(self, n: int = -1) -> bytes:

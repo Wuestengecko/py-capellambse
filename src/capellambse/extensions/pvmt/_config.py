@@ -14,21 +14,24 @@ __all__ = [
     "SelectorRules",
 ]
 
-import collections.abc as cabc
 import dataclasses
 import logging
 import operator
 import re
 import typing as t
 
-import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 import capellambse
 import capellambse.metamodel as mm
 import capellambse.model as m
 from capellambse import helpers
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    import markupsafe
+    from lxml import etree
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,9 +85,12 @@ def _matchprops(
 ) -> bool:
     for prop, op, wanted in props:
         group, prop = prop.rsplit(".", 1)
+        pvgs = getattr(obj, "property_value_groups", None)
+        if pvgs is None:
+            return False
         try:
-            actual = obj.property_value_groups[group][prop]  # type: ignore
-        except (AttributeError, KeyError):
+            actual = pvgs[group][prop]
+        except KeyError:
             return False
 
         cmp = _PROP_OPS[op]
@@ -323,15 +329,17 @@ class ManagedDomain(mm.capellacore.PropertyValuePkg):
     ) -> te.Self:
         self = m.wrap_xml(model, element, cls)
         try:
-            version = self.property_values.by_name("version").value
-        except Exception:
-            self.property_values.create(
+            version_pv = self.property_values.by_name("version")
+        except m.MultipleMatchesError:
+            raise
+        except KeyError:
+            version_pv = self.property_values.create(
                 name="version", value=PVMT_SCHEMA_VERSION
             )
         else:
-            if version != PVMT_SCHEMA_VERSION:
+            if version_pv.version != PVMT_SCHEMA_VERSION:
                 raise RuntimeError(
-                    f"Unsupported schema version {version!r}"
+                    f"Unsupported schema version {version_pv.version!r}"
                     f" on PVMT element {self._short_repr_()}"
                 )
         return self

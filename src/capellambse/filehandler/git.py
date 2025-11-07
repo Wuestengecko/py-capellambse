@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import errno
 import hashlib
@@ -21,9 +20,14 @@ import typing as t
 import urllib.parse
 import weakref
 
+import typing_extensions as te
+
 import capellambse.helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 LOGGER = logging.getLogger(__name__)
 CACHEBASE = pathlib.Path(capellambse.dirs.user_cache_dir, "models")
@@ -125,7 +129,7 @@ class _WritableGitFile(t.BinaryIO):
     ) -> None:
         self.__file.writelines(lines)
 
-    def __enter__(self) -> _WritableGitFile:
+    def __enter__(self) -> te.Self:
         self.__file.__enter__()
         return self
 

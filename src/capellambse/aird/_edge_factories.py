@@ -4,17 +4,19 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import math
 import typing as t
-
-from lxml import etree
 
 from capellambse import diagram, helpers
 
 from . import _common as C
 from . import _filters, _styling
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    from lxml import etree
 
 # Port classes that should not be considered
 # when differentiating ``PortAllocation``s.
@@ -123,7 +125,6 @@ def _extract_relative_bendpoints(
     sourceport: diagram.DiagramElement,
     bendpoints_elm: etree._Element,
 ):
-    bendpoints = []
     sourcebounds = sourceport.bounds
     try:
         sourceanchor = next(
@@ -138,11 +139,11 @@ def _extract_relative_bendpoints(
     bendpoints_attrib = bendpoints_elm.attrib.get(
         "points", "[0, 0, 0, 0]$[0, 0, 0, 0]"
     )
-    for point in bendpoints_attrib.split("$"):
-        bendpoints.append(
-            refpos + helpers.ssvparse(point, int, parens="[]", num=4)[:2]
-        )
 
+    bendpoints = [
+        refpos + helpers.ssvparse(point, int, parens="[]", num=4)[:2]
+        for point in bendpoints_attrib.split("$")
+    ]
     if len(bendpoints) == 1 or all(b == bendpoints[0] for b in bendpoints):
         return []
     return bendpoints

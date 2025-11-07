@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import importlib
 import typing as t
@@ -16,6 +15,9 @@ import capellambse.loader
 from capellambse import aird, diagram, model
 
 from .. import _common as c
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 Phase2CompositeFilter = t.Callable[
     [c.ElementBuilder, diagram.DiagramElement], None
@@ -359,7 +361,7 @@ class ActiveFilters(t.MutableSet[str]):
 for module in ("composite", "global"):
     try:
         importlib.import_module(f"{__name__}.{module}")
-    except Exception as _err:
+    except Exception as _err:  # noqa: BLE001, PERF203
         c.LOGGER.error(
             "Cannot load filters from %s: %s: %s",
             module,

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import collections.abc as cabc
 import errno
 import io
 import logging
@@ -23,6 +22,9 @@ import capellambse
 from capellambse import helpers
 
 from . import abc
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 LOGGER = logging.getLogger(__name__)
 MAX_SEARCHED_JOBS = (

@@ -26,7 +26,6 @@ __all__ = [
 
 import abc
 import base64
-import collections.abc as cabc
 import contextlib
 import enum
 import importlib.metadata as imm
@@ -40,12 +39,16 @@ import uuid
 import warnings
 
 import markupsafe
-from lxml import etree
 
 import capellambse
 from capellambse import aird, diagram, helpers, svg
 
 from . import _descriptors, _obj, _pods, stringy_enum
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    from lxml import etree
 
 VIEWPOINT_NS = _obj.Namespace(
     "http://www.eclipse.org/sirius/1.1.0",
@@ -266,7 +269,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
                 return self.render(fmt)
             except UnknownOutputFormat:
                 raise
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 if hasattr(self, "_error") and err is self._error:
                     err_img = self._render
                 else:
@@ -346,7 +349,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
             try:
                 chain = list(_walk_converters(conv))
                 bundle[mime] = _run_converter_chain(chain, render)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 LOGGER.exception("Failed converting diagram with %r", conv)
         if not bundle:
             LOGGER.error("Failed converting diagram for MIME bundle")
@@ -578,7 +581,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
             except FileNotFoundError:
                 LOGGER.debug("No index found")
                 index = None
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 err.__suppress_context__ = True
                 LOGGER.debug("Invalid or old index, ignoring", exc_info=err)
                 index = None
@@ -634,7 +637,7 @@ class AbstractDiagram(metaclass=abc.ABCMeta):
             self.invalidate_cache()
             try:
                 self._render = self._create_diagram(params)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 self._error = err
                 self._render = self.__create_error_image("parse", self._error)
 
@@ -900,7 +903,7 @@ class ConfluenceSVGFormat:
 
     @classmethod
     def convert(cls, dg: str) -> str:
-        return "".join((cls.prefix, dg, cls.postfix))
+        return f"{cls.prefix}{dg}{cls.postfix}"
 
     @classmethod
     def convert_pretty(cls, dg: str) -> str:
@@ -1041,7 +1044,7 @@ def _iter_format_converters() -> t.Iterator[tuple[str, DiagramConverter]]:
     for ep in imm.entry_points(group="capellambse.diagram.formats"):
         try:
             conv = ep.load()
-        except ImportError:
+        except ImportError:  # noqa: PERF203
             pass
         else:
             yield (ep.name, conv)

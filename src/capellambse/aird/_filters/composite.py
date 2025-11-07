@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import functools
 import typing as t
 
@@ -12,6 +11,9 @@ from capellambse import diagram
 
 from .. import _semantic
 from . import phase2_composite_filter
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 
 def _lookup_styleclasses(*styleclasses: str) -> frozenset[str]:

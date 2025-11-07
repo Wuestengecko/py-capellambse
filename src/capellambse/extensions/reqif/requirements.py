@@ -37,13 +37,12 @@ import re
 import sys
 import typing as t
 
-from lxml import etree
-
 import capellambse.model as m
 from capellambse import helpers
 
 if t.TYPE_CHECKING:
     import markupsafe
+    from lxml import etree
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated

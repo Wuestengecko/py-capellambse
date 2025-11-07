@@ -9,11 +9,13 @@ __all__ = [
     "has_icon",
 ]
 
-import collections.abc as cabc
 import re
 import typing as t
 
 from svgwrite import container, drawing, gradients, path, shapes, text
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 _P = t.ParamSpec("_P")
 _T = t.TypeVar("_T")

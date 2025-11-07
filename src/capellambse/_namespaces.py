@@ -5,10 +5,12 @@ from __future__ import annotations
 
 __all__ = ["UnsupportedPluginError", "UnsupportedPluginVersionError"]
 
-import collections.abc as cabc
 import dataclasses
 import re
 import typing as t
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 
 class UnsupportedPluginError(ValueError):

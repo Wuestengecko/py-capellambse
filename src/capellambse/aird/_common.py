@@ -4,13 +4,11 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import enum
 import logging
 import math
 import operator
-import pathlib
 import re
 import typing as t
 
@@ -19,6 +17,10 @@ from lxml import builder, etree
 import capellambse._namespaces as _n
 import capellambse.loader
 from capellambse import diagram, helpers
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import pathlib
 
 LOGGER: logging.Logger = logging.getLogger(__name__)
 

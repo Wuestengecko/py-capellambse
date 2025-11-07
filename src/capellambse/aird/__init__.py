@@ -17,9 +17,7 @@ __all__ = [
     "parse_diagrams",
 ]
 
-import collections.abc as cabc
 import contextlib
-import pathlib
 import typing as t
 import urllib.parse
 
@@ -31,6 +29,10 @@ from capellambse import diagram, helpers, loader
 from . import _common as C
 from . import _filters, _semantic, _visual
 from ._filters import GLOBAL_FILTERS, ActiveFilters, GlobalFilter
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import pathlib
 
 DRepresentationDescriptor = t.NewType(
     "DRepresentationDescriptor", etree._Element
@@ -93,7 +95,7 @@ def enumerate_descriptors(
             if diag_root.tag not in DIAGRAM_ROOTS:
                 continue
 
-            yield t.cast(DRepresentationDescriptor, d)
+            yield t.cast("DRepresentationDescriptor", d)
 
 
 def viewpoint_of(descriptor: DRepresentationDescriptor) -> str:
@@ -121,7 +123,7 @@ def parse_diagrams(
     for descriptor in enumerate_descriptors(model):
         try:
             d = parse_diagram(model, descriptor, **params)
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001, PERF203
             C.LOGGER.warning(
                 "Ignoring invalid diagram %r: %s", descriptor, err
             )

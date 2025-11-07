@@ -4,10 +4,13 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import logging
 import re
+import typing as t
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 logger = logging.getLogger(__name__)
 

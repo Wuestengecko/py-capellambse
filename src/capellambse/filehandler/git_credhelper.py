@@ -15,9 +15,9 @@ def main():
             raise SystemExit(1)
         case [_, "get"]:
             if "GIT_USERNAME" in os.environ:
-                print(f"username={os.environ['GIT_USERNAME']}")
+                print(f"username={os.environ['GIT_USERNAME']}")  # noqa: T201
             if "GIT_PASSWORD" in os.environ:
-                print(f"password={os.environ['GIT_PASSWORD']}")
+                print(f"password={os.environ['GIT_PASSWORD']}")  # noqa: T201
 
 
 if __name__ == "__main__":

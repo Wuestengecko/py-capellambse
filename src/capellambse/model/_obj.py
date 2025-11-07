@@ -15,6 +15,7 @@ __all__ = [
     "MixedElementList",
     "ModelElement",
     "ModelObject",
+    "MultipleMatchesError",
     "Namespace",
     "UnresolvedClassName",
     "enumerate_namespaces",
@@ -138,6 +139,21 @@ class MissingClassError(KeyError):
         return f"No class {self.clsname!r} found in any known namespace"
 
 
+class MultipleMatchesError(KeyError):
+    """Raised when list filter would unexpectedly match multiple elements."""
+
+    def __init__(self, filter: t.Any, /) -> None:
+        super().__init__(filter)
+
+    def __str__(self) -> str:
+        return f"Multiple matches for {self.filter!r}"
+
+    @property
+    def filter(self) -> t.Any:
+        """The key that was used for filtering."""
+        return self.args[0]
+
+
 @dataclasses.dataclass(init=False, frozen=True)
 class Namespace:
     """The interface between the model and a namespace containing classes.
@@ -218,12 +234,12 @@ class Namespace:
         else:
             object.__setattr__(self, "maxver", None)
 
-        clstuple: te.TypeAlias = """tuple[
+        ClassTuple: te.TypeAlias = """tuple[
             type[ModelObject],
             av.AwesomeVersion,
             av.AwesomeVersion | None,
         ]"""
-        self._classes: dict[str, list[clstuple]]
+        self._classes: dict[str, list[ClassTuple]]
         object.__setattr__(self, "_classes", collections.defaultdict(list))
 
     def match_uri(self, uri: str) -> bool | av.AwesomeVersion | None:
@@ -315,12 +331,11 @@ class Namespace:
         assert self.version_precision > 0
         pos = dots = 0
         while pos < len(version) and dots < self.version_precision:
-            try:
-                pos = version.index(".", pos) + 1
-            except ValueError:
+            dot = version.find(".", pos)
+            if dot < 0:
                 return av.AwesomeVersion(version)
-            else:
-                dots += 1
+            pos = dot + 1
+            dots += 1
         trimmed = version[:pos] + re.sub(r"[^.]+", "0", version[pos:])
         return av.AwesomeVersion(trimmed)
 
@@ -761,7 +776,7 @@ class ModelElement(metaclass=_ModelElementMeta):
         for i in super().__dir__():
             try:
                 acc = getattr(cls, i)
-            except Exception:
+            except AttributeError:
                 continue
             if isinstance(acc, badacc):
                 continue
@@ -770,7 +785,7 @@ class ModelElement(metaclass=_ModelElementMeta):
             try:
                 if getattr(acc, "__deprecated__", None):
                     continue
-            except Exception:
+            except AttributeError:
                 continue
             attrs.append(i)
         return attrs
@@ -793,7 +808,7 @@ class ModelElement(metaclass=_ModelElementMeta):
 
             try:
                 value = getattr(self, attr)
-            except Exception:
+            except AttributeError:
                 continue
 
             if inspect.ismethod(value):
@@ -849,7 +864,7 @@ class ModelElement(metaclass=_ModelElementMeta):
 
         try:
             icon = self._get_icon("datauri_svg", size=20)
-        except Exception:
+        except Exception:  # noqa: BLE001
             icon = None
 
         fragments.append("<h1>")
@@ -894,7 +909,7 @@ class ModelElement(metaclass=_ModelElementMeta):
 
             try:
                 value = getattr(self, attr)
-            except Exception:
+            except AttributeError:
                 continue
 
             if inspect.ismethod(value):
@@ -922,7 +937,7 @@ class ModelElement(metaclass=_ModelElementMeta):
     def _short_html_(self) -> markupsafe.Markup:
         try:
             icon = self._get_icon("datauri_svg", size=15) or ""
-        except Exception:
+        except Exception:  # noqa: BLE001
             icon = ""
         else:
             assert isinstance(icon, str)
@@ -1325,7 +1340,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
             for obj in self:
                 try:
                     obj_attrs = dir(obj)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     continue
                 for attr in obj_attrs:
                     if no_dir_attr.search(attr):
@@ -1405,7 +1420,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
         mapkey = operator.attrgetter(self.__mapkey)
         candidates = [i for i in self if mapkey(i) == key]
         if len(candidates) > 1:
-            raise ValueError(f"Multiple matches for key {key!r}")
+            raise MultipleMatchesError(key)
         if not candidates:
             raise KeyError(key)
         return candidates[0]
@@ -1777,7 +1792,7 @@ class _ListFilter(t.Generic[T]):
             return self._parent._newlist(elements)
         if len(elements) > 1:
             value = values[0] if len(values) == 1 else values
-            raise KeyError(f"Multiple matches for {value!r}")
+            raise MultipleMatchesError(value)
         if len(elements) == 0:
             raise KeyError(values[0] if len(values) == 1 else values)
         return wrap_xml(self._parent._model, elements[0])
@@ -2195,10 +2210,11 @@ def resolve_class_name(uclsname: UnresolvedClassName, /) -> ClassName:
             return (ns_obj, clsname)
 
     if not ns:
-        classes: list[ClassName] = []
-        for ns_obj in enumerate_namespaces():
-            if clsname in ns_obj:
-                classes.append((ns_obj, clsname))
+        classes: list[ClassName] = [
+            (ns_obj, clsname)
+            for ns_obj in enumerate_namespaces()
+            if clsname in ns_obj
+        ]
         if len(classes) < 1:
             raise ValueError(f"Class not found: {uclsname!r}")
         if len(classes) > 1:

@@ -7,12 +7,13 @@ from __future__ import annotations
 import typing as t
 import warnings
 
-from lxml import etree
-
 import capellambse.model as m
 
 from . import capellacore, fa, information, modellingcore
 from . import namespaces as ns
+
+if t.TYPE_CHECKING:
+    from lxml import etree
 
 NS = ns.CS
 

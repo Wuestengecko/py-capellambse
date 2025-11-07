@@ -47,12 +47,14 @@ import warnings
 
 import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 import capellambse
 from capellambse import helpers
 
 from . import T, T_co, U, U_co
+
+if t.TYPE_CHECKING:
+    from lxml import etree
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -790,7 +792,7 @@ class WritableAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
                 f"Expected str as first type, got {type(hint).__name__!r}"
             )
 
-        (cls,) = t.cast(tuple[type[T_co]], _obj.find_wrapper(hint))
+        (cls,) = t.cast("tuple[type[T_co]]", _obj.find_wrapper(hint))
         return (cls, build_xtype(cls))  # type: ignore[deprecated]
 
     def _guess_xtype(self) -> tuple[type[T_co], str]:
@@ -1487,7 +1489,7 @@ class Allocation(Relationship[T_co]):
             )
             if ":" in alloc_type:
                 alloc_type = t.cast(
-                    tuple[str, str], tuple(alloc_type.rsplit(":", 1))
+                    "tuple[str, str]", tuple(alloc_type.rsplit(":", 1))
                 )
                 self.alloc_type = (
                     _obj.find_namespace(alloc_type[0]),
@@ -1586,7 +1588,7 @@ class Allocation(Relationship[T_co]):
         te.assert_type(value, cabc.Iterable[T_co | NewObject])
         if any(isinstance(i, NewObject) for i in value):
             raise TypeError(f"Cannot create objects on {self}")
-        value = t.cast(cabc.Iterable[T_co], value)
+        value = t.cast("cabc.Iterable[T_co]", value)
 
         # TODO Remove this extra check when removing deprecated features
         if self.tag is None:
@@ -1756,7 +1758,7 @@ class Allocation(Relationship[T_co]):
             else:
                 self.__insert_refobj(elmlist._parent, refobj, before=None)
         elmlist._elements = list(self.__find_refs(elmlist._parent))
-        return t.cast(T_co, value)
+        return t.cast("T_co", value)
 
     def delete(
         self,
@@ -1776,10 +1778,11 @@ class Allocation(Relationship[T_co]):
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
     ) -> cabc.Generator[None, None, None]:
-        purge: list[etree._Element] = []
-        for ref in self.__find_refs(obj):
-            if self.__follow_ref(obj, ref) is target._element:
-                purge.append(ref)
+        purge: list[etree._Element] = [
+            ref
+            for ref in self.__find_refs(obj)
+            if self.__follow_ref(obj, ref) is target._element
+        ]
 
         yield
 
@@ -1977,7 +1980,7 @@ class Association(Relationship[T_co]):
         te.assert_type(value, cabc.Iterable[T_co | NewObject])
         if any(isinstance(i, NewObject) for i in value):
             raise TypeError("Cannot create new objects on an Association")
-        value = t.cast(cabc.Iterable[T_co], value)
+        value = t.cast("cabc.Iterable[T_co]", value)
 
         if self.attr is None:
             raise RuntimeError(
@@ -2028,7 +2031,7 @@ class Association(Relationship[T_co]):
 
         objs = [*elmlist[:index], value, *elmlist[index:]]
         self.__set_links(elmlist._parent, objs)
-        return t.cast(T_co, value)
+        return t.cast("T_co", value)
 
     def delete(
         self, elmlist: _obj.ElementListCouplingMixin, obj: _obj.ModelObject
@@ -2277,7 +2280,7 @@ class AttributeMatcherAccessor(DirectProxyAccessor[T_co]):
                     getattr(elm, k) == v for k, v in self.attributes.items()
                 ):
                     matches.append(elm._element)
-            except AttributeError:
+            except AttributeError:  # noqa: PERF203
                 pass
 
         if self.__aslist is None:
@@ -2534,9 +2537,9 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def __repr__(self) -> str:
         try:
             attrs: cabc.Sequence[t.Any] = [
-                i for (_, (i,), *_) in t.cast(t.Any, self.attrs.__reduce__())
+                i for (_, (i,), *_) in t.cast("t.Any", self.attrs.__reduce__())
             ]
-        except Exception:
+        except Exception:  # noqa: BLE001
             attrs = self.attrs
         return (
             f"<{type(self).__name__} {self._qualname!r}"
@@ -3176,7 +3179,7 @@ class Containment(Relationship[T_co]):
             else:
                 raise ValueError(f"Invalid type hint: {hint}")
 
-        return t.cast(list[type[T_co]], classes)
+        return t.cast("list[type[T_co]]", classes)
 
     def _insert_create(
         self,

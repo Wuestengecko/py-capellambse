@@ -10,14 +10,17 @@ import typing as t
 
 import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 import capellambse
 import capellambse.model as m
 from capellambse.metamodel import capellacore
 
-from . import _config
 from ._config import NS as NS
+
+if t.TYPE_CHECKING:
+    from lxml import etree
+
+    from . import _config
 
 e = markupsafe.escape
 

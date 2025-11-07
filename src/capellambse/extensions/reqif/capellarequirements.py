@@ -15,12 +15,9 @@ __all__ = [
 
 import collections.abc as cabc
 import contextlib
-import os
 import sys
 import typing as t
 import warnings
-
-from lxml import etree
 
 import capellambse
 import capellambse.model as m
@@ -34,6 +31,10 @@ else:
     from typing_extensions import deprecated
 
 if t.TYPE_CHECKING:
+    import os
+
+    from lxml import etree
+
     from capellambse.metamodel import capellacore  # noqa: F401
 
 NS = m.Namespace(

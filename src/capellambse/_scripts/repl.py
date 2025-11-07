@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import code
-import collections.abc as cabc
 import contextlib
 import importlib
 import json
@@ -15,6 +14,7 @@ import os.path
 import pathlib
 import shutil
 import subprocess
+import sys
 import textwrap
 import typing as t
 
@@ -24,6 +24,9 @@ from lxml import etree
 import capellambse
 from capellambse import cli_helpers
 from capellambse.loader import exs
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 basedir = pathlib.Path(__file__).parent.resolve()
 logger = logging.getLogger("capellambse.repl")
@@ -363,7 +366,10 @@ def fzf(
             text=True,
             stdout=subprocess.PIPE,
         )
-    except (Exception, KeyboardInterrupt):
+    except KeyboardInterrupt:
+        return None
+    except subprocess.CalledProcessError as err:
+        print(f"fzf failed with exit code {err.returncode}", file=sys.stderr)
         return None
     else:
         selected = elements[int(proc.stdout.strip().split(" ", 1)[0])]

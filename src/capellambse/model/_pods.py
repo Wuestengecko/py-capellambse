@@ -26,13 +26,14 @@ import typing as t
 
 import markupsafe
 import typing_extensions as te
-from lxml import etree
 
 from capellambse import helpers
 
 from . import E, U
 
 if t.TYPE_CHECKING:
+    from lxml import etree
+
     from . import _obj
 
 

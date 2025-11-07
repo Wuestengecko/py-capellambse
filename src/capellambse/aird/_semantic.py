@@ -11,17 +11,19 @@ size and styling.
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import logging
 import typing as t
 
-from lxml import etree
-
-import capellambse
-from capellambse import diagram
-
 from . import _box_factories, _edge_factories
 from . import _common as c
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    from lxml import etree
+
+    import capellambse
+    from capellambse import diagram
 
 LOGGER = logging.getLogger(__name__)
 NO_RENDER_XMT = frozenset(

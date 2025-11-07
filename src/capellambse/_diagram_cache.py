@@ -103,7 +103,7 @@ def export(
     *,
     format: str,
     index: bool,
-    force: t.Literal["exe", "docker", None],
+    force: t.Literal["exe", "docker"] | None,
     background: bool,
     refresh: bool = False,
 ) -> list[IndexEntry]:
@@ -161,7 +161,7 @@ def export(
 def _find_executor(
     model: capellambse.MelodyModel,
     capella: str,
-    force: t.Literal["exe", "docker", None],
+    force: t.Literal["exe", "docker"] | None,
 ) -> dict[str, str]:
     assert model.info.capella_version
     capella = capella.replace("{VERSION}", model.info.capella_version)

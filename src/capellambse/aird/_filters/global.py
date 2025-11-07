@@ -5,13 +5,15 @@
 from __future__ import annotations
 
 import contextlib
-
-import lxml.etree
+import typing as t
 
 import capellambse.loader
 from capellambse import diagram, helpers
 
 from . import FilterArguments, composite, global_filter
+
+if t.TYPE_CHECKING:
+    import lxml.etree
 
 XT_CEX_FEX_ALLOCATION = (
     "org.polarsys.capella.core.data.fa"
@@ -171,10 +173,11 @@ def hide_alloc_func_exch(
     """Hide functional exchanges that are allocated to a component exchange."""
     del flt
 
-    component_exchanges = []
-    for element in args.target_diagram:
-        if not element.hidden and element.styleclass == "ComponentExchange":
-            component_exchanges.append(element)
+    component_exchanges = [
+        element
+        for element in args.target_diagram
+        if not element.hidden and element.styleclass == "ComponentExchange"
+    ]
 
     for cex in component_exchanges:
         assert cex.uuid is not None
@@ -212,11 +215,8 @@ def _get_allocated_exchangeitem_names(
     melodyloader: capellambse.loader.MelodyLoader,
 ) -> tuple[lxml.etree._Element | None, list[str]]:
     for obj_id in try_ids:
-        try:
+        with contextlib.suppress(KeyError):
             elm = melodyloader[obj_id]
-        except KeyError:
-            pass
-        else:
             break
     else:
         return (None, [])

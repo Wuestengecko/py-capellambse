@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 import abc
-import collections.abc as cabc
 import dataclasses
 import fnmatch
 import os
@@ -24,6 +23,9 @@ import typing as t
 import typing_extensions as te
 
 from capellambse import helpers
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 if sys.version_info >= (3, 11):
     import importlib.resources.abc as ira

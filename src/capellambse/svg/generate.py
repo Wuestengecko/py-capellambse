@@ -3,14 +3,16 @@
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import dataclasses
 import json
-import os
 import pathlib
 import typing as t
 
 from capellambse.svg.drawing import LabelDict
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+    import os
 
 ContentsDict = t.TypedDict(
     "ContentsDict",

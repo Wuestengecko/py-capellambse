@@ -6,7 +6,6 @@ from __future__ import annotations
 
 __all__ = ["ARGS_CMDLINE", "native_capella"]
 
-import collections.abc as cabc
 import contextlib
 import dataclasses
 import errno
@@ -20,7 +19,10 @@ import string
 import subprocess
 import typing as t
 
-import capellambse
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
+
+    import capellambse
 
 _LOGGER = logging.getLogger(__name__)
 

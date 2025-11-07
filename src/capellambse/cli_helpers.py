@@ -12,7 +12,6 @@ __all__ = [
     "loadinfo",
 ]
 
-import collections.abc as cabc
 import importlib.abc
 import importlib.resources as imr
 import json
@@ -25,6 +24,9 @@ import warnings
 
 import capellambse
 from capellambse import filehandler
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 LOGGER = logging.getLogger(__name__)
 

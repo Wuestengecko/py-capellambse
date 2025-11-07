@@ -8,7 +8,6 @@ import collections.abc as cabc
 import dataclasses
 import itertools
 import logging
-import os
 import typing as t
 import warnings
 
@@ -23,6 +22,9 @@ from . import _descriptors, _obj, diagram
 # `pathlib` is referenced by the `dataclasses` auto-generated init.
 # Sphinx-autodoc-typehints needs this import here to resolve the forward ref.
 import pathlib  # isort: skip  # noqa: F401
+
+if t.TYPE_CHECKING:
+    import os
 
 LOGGER = logging.getLogger(__name__)
 
@@ -521,7 +523,7 @@ class MelodyModel:
 
                 try:
                     value = getattr(obj, attr)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     continue
 
                 if isinstance(value, _obj.ModelElement) and value == target:

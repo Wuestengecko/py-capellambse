@@ -11,7 +11,6 @@ does.
 
 from __future__ import annotations
 
-import collections.abc as cabc
 import contextlib
 import html.entities
 import io
@@ -22,6 +21,9 @@ import typing as t
 import warnings
 
 import lxml.etree
+
+if t.TYPE_CHECKING:
+    import collections.abc as cabc
 
 try:
     from capellambse._compiled import serialize as _native_serialize
@@ -135,7 +137,7 @@ def write(
     *,
     encoding: str | _UnspecifiedType = _NOT_SPECIFIED,
     errors: str | _UnspecifiedType = _NOT_SPECIFIED,
-    line_length: float | int = LINE_LENGTH,
+    line_length: float = LINE_LENGTH,
     siblings: bool = False,
 ) -> None:
     """Write the XML tree to ``file``.
@@ -189,7 +191,7 @@ def serialize(
     *,
     encoding: str = ...,
     errors: str = ...,
-    line_length: float | int = ...,
+    line_length: float = ...,
     siblings: bool | None = ...,
     file: None = ...,
 ) -> bytes: ...
@@ -200,7 +202,7 @@ def serialize(
     *,
     encoding: str = ...,
     errors: str = ...,
-    line_length: float | int = ...,
+    line_length: float = ...,
     siblings: bool | None = ...,
     file: HasWrite,
 ) -> None: ...
@@ -210,7 +212,7 @@ def serialize(
     *,
     encoding: str | _UnspecifiedType = _NOT_SPECIFIED,
     errors: str | _UnspecifiedType = _NOT_SPECIFIED,
-    line_length: float | int = LINE_LENGTH,
+    line_length: float = LINE_LENGTH,
     siblings: bool | None = None,
     file: HasWrite | None = None,
 ) -> bytes | None:
@@ -289,7 +291,7 @@ def _python_serialize(
     *,
     encoding: str,
     errors: str,
-    line_length: float | int,
+    line_length: float,
     siblings: bool,
     file: HasWrite | None,
 ) -> bytes | None:
@@ -464,7 +466,7 @@ def _serialize_element(
     encoding: str,
     errors: str,
     pos: int = 0,
-    line_length: float | int,
+    line_length: float,
 ) -> int:
     assert isinstance(element, lxml.etree._Element)
     assert None not in element.nsmap

@@ -10,10 +10,10 @@ import re
 import shutil
 import subprocess
 import sys
+import typing as t
 from importlib import metadata
 
 import pytest
-import requests_mock
 from lxml import etree
 from lxml.builder import E
 
@@ -23,6 +23,9 @@ from capellambse.filehandler import gitlab_artifacts, memory
 from capellambse.loader import exs
 
 from .conftest import TEST_DATA, Models  # type: ignore
+
+if t.TYPE_CHECKING:
+    import requests_mock
 
 DUMMY_SVG = b'<svg xmlns="http://www.w3.org/2000/svg"/>'
 DUMMY_PNG_B64 = (
@@ -308,7 +311,7 @@ def test_http_file_handler_replaces_percent_escapes(
     file_handler = capellambse.get_filehandler(path, subdir=subdir)
     file_handler.open("demo/my model.aird", "rb").close()
 
-    assert endpoint.called_once
+    assert endpoint.call_count == 1
 
 
 def test_http_file_handler_hands_auth_to_server(
@@ -330,7 +333,7 @@ def test_http_file_handler_hands_auth_to_server(
     )
     file_handler.open("test.svg", "rb").close()
 
-    assert endpoint.called_once
+    assert endpoint.call_count == 1
 
 
 def test_http_file_handlers_passed_through_custom_headers(
@@ -347,7 +350,7 @@ def test_http_file_handlers_passed_through_custom_headers(
     )
     file_handler.open("test.svg", "rb").close()
 
-    assert endpoint.called_once
+    assert endpoint.call_count == 1
 
 
 def test_gitlab_artifacts_handler_uses_public_gitlab_when_no_hostname_given(
