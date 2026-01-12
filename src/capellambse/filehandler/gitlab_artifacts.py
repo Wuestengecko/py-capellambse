@@ -48,7 +48,7 @@ class GitlabArtifactsFiles(abc.FileHandler):
     meaning and behavior during CI runs, and see below for how they are
     used.
 
-    __ https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+    __ https://docs.gitlab.com/ci/variables/predefined_variables/
 
     Parameters
     ----------

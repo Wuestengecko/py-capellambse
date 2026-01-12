@@ -19,7 +19,7 @@ Install from PyPI
 Installing |project| from Python Package Index via pip__ is the quickest way to
 get started.
 
-__ http://www.pip-installer.org/
+__ https://pip.pypa.io/en/stable/
 
 .. code:: bash
 

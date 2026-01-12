@@ -103,4 +103,4 @@ If you want a quickstart at how to use this package, head right into the
    development/developing-docs
    development/repl
 
-.. _Capella: https://www.eclipse.org/capella/
+.. _Capella: https://mbse-capella.org/

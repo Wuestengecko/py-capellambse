@@ -50,7 +50,7 @@ a single Eclipse project. You could open those with any Eclipse that has EMF
 link and search for "Studio") for the best experience - it is provisioned with
 all the extras that help you visualize / review the meta-model.
 
-__ https://www.eclipse.org/capella/download.html
+__ https://mbse-capella.org/download.html
 
 .. image:: ../_static/img/2021-05-09_10-32.jpg
 .. image:: ../_static/img/2021-05-09_10-36.jpg
@@ -101,7 +101,7 @@ By the way, the figure above `is also available in SVG`__ - you can open it in
 a new tab and zoom-in if you like or scroll down for a simplified one (but
 opinionated).
 
-__ core-pkg-deps-raw.svg
+__ ../_static/img/core-pkg-deps-raw.svg
 
 It almost feels like everything depends on everything but that isn't true
 really. We could change perspective and look for the dependencies of an
@@ -129,7 +129,7 @@ as a specialization of ``AbstractFunction`` that comes from
 view (there is also a tiny `how-to use it below`__). We'll use that to
 visualize the way the functions are made.
 
-__ https://www.eclipse.org/ecoretools/overview.html
+__ https://eclipse.dev/ecoretools/overview.html
 __ #
 
 .. image:: ../_static/img/2021-05-09_22-09.jpg

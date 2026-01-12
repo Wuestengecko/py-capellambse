@@ -23,7 +23,7 @@ client code should not be aware of.
   use. Please see the new `PVMT introduction notebook`__ for more details on
   how to use it.
 
-  __ ../examples/08 Property Values.html
+  __ ../examples/08%20Property%20Values.ipynb
 
 - Previously deprecated names have been removed from the metamodel.
 
