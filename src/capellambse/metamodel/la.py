@@ -4,18 +4,13 @@
 
 from __future__ import annotations
 
-import sys
 import typing as t
+import warnings
 
 import capellambse.model as m
 
 from . import capellacommon, cs, fa, interaction
 from . import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.LA
 
@@ -87,7 +82,7 @@ class LogicalArchitecture(cs.ComponentArchitecture):
         return self._model.search((ns.FA, "ComponentExchange"), below=self)
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "LogicalArchitecture.component_exchanges will soon change"
             " to map the directly contained ComponentExchanges;"

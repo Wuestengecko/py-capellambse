@@ -7,14 +7,8 @@ from __future__ import annotations
 import collections.abc as cabc
 import enum
 import functools
-import sys
 import typing as t
 import warnings
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 VIRTUAL_NAMESPACE_PREFIX = (
     "https://dbinfrago.github.io/py-capellambse/virtual-namespace/"
@@ -27,7 +21,7 @@ objects with special functionality.
 """
 
 
-@deprecated("set_accessor is deprecated and no longer needed")
+@warnings.deprecated("set_accessor is deprecated and no longer needed")
 def set_accessor(
     cls: type[ModelObject], attr: str, accessor: Accessor
 ) -> None:
@@ -35,13 +29,15 @@ def set_accessor(
     accessor.__set_name__(cls, attr)
 
 
-@deprecated("set_self_references is deprecated, use a 'Containment' instead")
+@warnings.deprecated(
+    "set_self_references is deprecated, use a 'Containment' instead"
+)
 def set_self_references(*args: tuple[type[ModelObject], str]) -> None:
     for cls, attr in args:
         setattr(cls, attr, DirectProxyAccessor(cls, aslist=ElementList))  # type: ignore[deprecated]
 
 
-@deprecated(
+@warnings.deprecated(
     '`@attr_equal("...")` is deprecated,'
     ' use `class X(ModelElement, eq="...")` instead'
 )

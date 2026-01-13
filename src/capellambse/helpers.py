@@ -25,6 +25,7 @@ import time
 import typing as t
 import urllib.parse
 import uuid
+import warnings
 
 import datauri
 import lxml.html
@@ -37,11 +38,6 @@ from PIL import ImageFont
 import capellambse
 import capellambse._namespaces as _n
 import capellambse.filehandler as fh
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 if sys.platform.startswith("win"):
     import msvcrt
@@ -1104,7 +1100,7 @@ def ntuples[T](
 def ntuples[T](
     num: int, iterable: cabc.Iterable[T], *, pad: t.Literal[True]
 ) -> cabc.Iterator[tuple[T | None, ...]]: ...
-@deprecated("Use 'itertools.batched' (or the backport in helpers) instead")
+@warnings.deprecated("Use 'itertools.batched' instead")
 def ntuples[T](
     num: int,
     iterable: cabc.Iterable[T],
@@ -1138,22 +1134,6 @@ def ntuples[T](
             yield value + (None,) * (num - len(value))
         else:
             break
-
-
-if sys.version_info >= (3, 13):
-    from itertools import batched
-else:
-
-    def batched[T](
-        it: cabc.Iterable[T], n: int, /, *, strict: bool = False
-    ) -> cabc.Iterable[tuple[T, ...]]:
-        if n < 1:
-            raise ValueError("n must be at least one")
-        it = iter(it)
-        while batch := tuple(itertools.islice(it, n)):
-            if strict and len(batch) != n:
-                raise ValueError("batched(): incomplete batch")
-            yield batch
 
 
 # Simple one-trick helper classes
@@ -1204,3 +1184,18 @@ def get_transformation(
     return {
         "transform": f"translate({tx},{ty}) scale({s}) rotate(45,{rx},{ry})"
     }
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(attr):
+        if attr == "batched":
+            warnings.warn(
+                "The re-export at 'capellambse.helpers.batched' is deprecated, use 'itertools.batched' instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            return itertools.batched
+
+        raise AttributeError(f"module {__name__} has no attribute {attr!r}")

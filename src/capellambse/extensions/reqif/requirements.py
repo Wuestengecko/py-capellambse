@@ -34,8 +34,8 @@ __all__ = [
 ]
 
 import re
-import sys
 import typing as t
+import warnings
 
 from lxml import etree
 
@@ -44,11 +44,6 @@ from capellambse import helpers
 
 if t.TYPE_CHECKING:
     import markupsafe
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = m.Namespace(
     "http://www.polarsys.org/kitalpha/requirements",
@@ -241,7 +236,7 @@ class Folder(Requirement):
     )
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "Folder.folders is deprecated,"
             " use 'requirements.by_class(Folder)' instead"
@@ -314,7 +309,7 @@ class AttributeDefinitionEnumeration(AttributeDefinition):
     is_multi_valued = m.BoolPOD("multiValued")
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "AttributeDefinitionEnumeration.multi_valued is deprecated,"
             " use 'is_multi_valued' instead"
@@ -325,7 +320,7 @@ class AttributeDefinitionEnumeration(AttributeDefinition):
         return self.is_multi_valued
 
     @multi_valued.setter
-    @deprecated(
+    @warnings.deprecated(
         (
             "AttributeDefinitionEnumeration.multi_valued is deprecated,"
             " use 'is_multi_valued' instead"
@@ -343,7 +338,7 @@ class EnumerationValueAttribute(Attribute):
     values = m.Association["EnumValue"]((NS, "EnumValue"), "values")
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         "EnumerationValueAttribute.value is deprecated, use 'values' instead",
         category=FutureWarning,
     )

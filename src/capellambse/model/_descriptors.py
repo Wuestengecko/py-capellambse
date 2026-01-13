@@ -40,7 +40,6 @@ import contextlib
 import itertools
 import logging
 import operator
-import sys
 import types
 import typing as t
 import warnings
@@ -52,13 +51,6 @@ from lxml import etree
 import capellambse
 from capellambse import helpers
 
-from . import T, T_co, U, U_co
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
-
 _NotSpecifiedType = t.NewType("_NotSpecifiedType", object)
 _NOT_SPECIFIED = _NotSpecifiedType(object())
 "Used to detect unspecified optional arguments"
@@ -66,7 +58,7 @@ _NOT_SPECIFIED = _NotSpecifiedType(object())
 LOGGER = logging.getLogger(__name__)
 
 
-@deprecated(
+@warnings.deprecated(
     "@xtype_handler is deprecated and no longer used,"
     " inherit from ModelElement instead"
 )
@@ -82,7 +74,7 @@ def xtype_handler[T: _obj.ModelObject](
     return lambda i: i
 
 
-@deprecated("xsi:type strings are deprecated")
+@warnings.deprecated("xsi:type strings are deprecated")
 def build_xtype(class_: type[_obj.ModelObject]) -> str:
     ns: _obj.Namespace | None = getattr(class_, "__capella_namespace__", None)
     if ns is None:
@@ -656,7 +648,9 @@ class Relationship[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
             self.single_attr = super_acc.single_attr
 
 
-@deprecated("WritableAccessor is deprecated, use Relationship instead")
+@warnings.deprecated(
+    "WritableAccessor is deprecated, use Relationship instead"
+)
 class WritableAccessor[T: _obj.ModelObject](
     Accessor["T | _obj.ElementList[T] | None"]
 ):
@@ -896,7 +890,9 @@ class WritableAccessor[T: _obj.ModelObject](
         )
 
 
-@deprecated("PhysicalAccessor is deprecated, use Relationship instead")
+@warnings.deprecated(
+    "PhysicalAccessor is deprecated, use Relationship instead"
+)
 class PhysicalAccessor[T: _obj.ModelObject](
     Accessor["T | _obj.ElementList[T] | None"]
 ):
@@ -984,7 +980,9 @@ class PhysicalAccessor[T: _obj.ModelObject](
         )
 
 
-@deprecated("DirectProxyAccessor is deprecated, use Containment instead")
+@warnings.deprecated(
+    "DirectProxyAccessor is deprecated, use Containment instead"
+)
 class DirectProxyAccessor[T: _obj.ModelObject](
     WritableAccessor[T], PhysicalAccessor[T]
 ):
@@ -1264,7 +1262,7 @@ class DirectProxyAccessor[T: _obj.ModelObject](
         yield
 
 
-@deprecated(
+@warnings.deprecated(
     "DeepProxyAccessor is deprecated, use @property and model.search() instead"
 )
 class DeepProxyAccessor[T: _obj.ModelObject](PhysicalAccessor[T]):
@@ -1372,7 +1370,7 @@ class Allocation[T: _obj.ModelObject](Relationship[T]):
     backattr: str | None
 
     @t.overload
-    @deprecated(
+    @warnings.deprecated(
         "Raw classes, xsi:type strings and 'aslist' are deprecated,"
         " migrate to (Namespace, 'ClassName') tuples and drop aslist=..."
     )
@@ -1796,7 +1794,7 @@ class Allocation[T: _obj.ModelObject](Relationship[T]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         purge: list[etree._Element] = [
             ref
             for ref in self.__find_refs(obj)
@@ -2088,7 +2086,7 @@ class Association[T: _obj.ModelObject](Relationship[T]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         if self.attr is None:
             raise RuntimeError(
                 f"{type(self).__name__} was not initialized properly;"
@@ -2132,7 +2130,7 @@ class Association[T: _obj.ModelObject](Relationship[T]):
         self.attr = super_acc.attr
 
 
-@deprecated(
+@warnings.deprecated(
     "PhysicalLinkEndsAccessor is deprecated,"
     " use Association(..., fixed_length=2) instead"
 )
@@ -2282,7 +2280,9 @@ class ParentAccessor[T: _obj.ModelObject](Accessor["_obj.ModelObject"]):
         return _obj.wrap_xml(obj._model, parent)
 
 
-@deprecated("AttributeMatcherAccessor is deprecated, use Filter instead")
+@warnings.deprecated(
+    "AttributeMatcherAccessor is deprecated, use Filter instead"
+)
 class AttributeMatcherAccessor[T: _obj.ModelObject](DirectProxyAccessor[T]):
     __slots__ = (
         "_AttributeMatcherAccessor__aslist",
@@ -2782,7 +2782,7 @@ class Filter[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         if self.wrapped is None:
             raise RuntimeError(
                 f"{type(self).__name__} was not initialized properly;"
@@ -2794,7 +2794,7 @@ class Filter[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
             yield
 
 
-@deprecated(
+@warnings.deprecated(
     "TypecastAccessor is deprecated,"
     " use Filter to perform filtering"
     " or Alias to create an unfiltered Alias"
@@ -2940,7 +2940,7 @@ class Containment[T: _obj.ModelObject](Relationship[T]):
     alternate: type[_obj.ModelObject] | None
 
     @t.overload
-    @deprecated(
+    @warnings.deprecated(
         "Raw classes, xsi:type strings and 'aslist' are deprecated,"
         " migrate to (Namespace, 'ClassName') tuples and drop aslist=..."
     )

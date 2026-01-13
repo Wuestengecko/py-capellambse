@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import enum
-import sys
 import types
 import typing as t
 import warnings
@@ -16,11 +15,6 @@ from capellambse import helpers
 
 from .. import capellacore, modellingcore
 from .. import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.INFORMATION_DATAVALUE
 
@@ -83,7 +77,7 @@ class DataValue(
     if not t.TYPE_CHECKING:
 
         @property
-        @deprecated(
+        @warnings.deprecated(
             "This class does not have a '.value',"
             " use a concrete 'Literal*Value' class instead"
         )

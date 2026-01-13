@@ -22,19 +22,14 @@ import collections.abc as cabc
 import dataclasses
 import enum
 import logging
-import sys
 import typing as t
+import warnings
 
 from lxml import etree
 
 import capellambse
 import capellambse.metamodel as mm
 import capellambse.model as m
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 LOGGER = logging.getLogger(__name__)
 
@@ -216,7 +211,7 @@ class Rules(dict[str, Rule]):
             category = Category[category]
         return [i for i in self.values() if i.category == category]
 
-    @deprecated("by_type has been renamed to by_class")
+    @warnings.deprecated("by_type has been renamed to by_class")
     def by_type(self, type: type[m.ModelElement] | str) -> list[Rule]:
         return self.by_class(type)
 
@@ -318,7 +313,7 @@ class Results:
             if result.passed == passed
         )
 
-    @deprecated("by_type has been renamed to by_class")
+    @warnings.deprecated("by_type has been renamed to by_class")
     def by_type(self, /, *types: str) -> Results:
         return self.by_class(*types)
 

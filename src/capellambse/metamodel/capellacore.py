@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import enum
-import sys
 import typing as t
 import warnings
 
@@ -12,11 +11,6 @@ import capellambse.model as m
 
 from . import modellingcore
 from . import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.CAPELLACORE
 
@@ -272,7 +266,9 @@ class Involvement(Relationship, abstract=True):
     )
 
     @property
-    @deprecated("Synthetic names are deprecated", category=FutureWarning)
+    @warnings.deprecated(
+        "Synthetic names are deprecated", category=FutureWarning
+    )
     def name(self) -> str:
         """Return the name."""
         direction = ""

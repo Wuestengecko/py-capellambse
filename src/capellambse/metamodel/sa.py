@@ -8,18 +8,13 @@ functions, actors etc. which is best presented in a glossary document.
 
 from __future__ import annotations
 
-import sys
 import typing as t
+import warnings
 
 import capellambse.model as m
 
 from . import capellacommon, capellacore, cs, fa, interaction
 from . import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.SA
 
@@ -225,7 +220,9 @@ class CapabilityExploitation(capellacore.Relationship):
     )
 
     @property
-    @deprecated("Synthetic names are deprecated", category=FutureWarning)
+    @warnings.deprecated(
+        "Synthetic names are deprecated", category=FutureWarning
+    )
     def name(self) -> str:
         direction = ""
         if self.capability is not None:

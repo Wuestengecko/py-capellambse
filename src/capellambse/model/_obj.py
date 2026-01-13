@@ -38,7 +38,6 @@ import inspect
 import logging
 import operator
 import re
-import sys
 import textwrap
 import typing as t
 import warnings
@@ -52,11 +51,6 @@ import capellambse
 from capellambse import helpers
 
 from . import VIRTUAL_NAMESPACE_PREFIX, _descriptors, _pods, _styleclass
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 if t.TYPE_CHECKING:
     import capellambse.metamodel as mm
@@ -634,7 +628,9 @@ class ModelElement(metaclass=_ModelElementMeta):
         return wrap_xml(self._model, self._model._loader[uuid]).name
 
     @classmethod
-    @deprecated("ModelElement.from_model is deprecated, use wrap_xml instead")
+    @warnings.deprecated(
+        "ModelElement.from_model is deprecated, use wrap_xml instead"
+    )
     def from_model(
         cls, model: capellambse.MelodyModel, element: etree._Element
     ) -> te.Self:
@@ -677,7 +673,7 @@ class ModelElement(metaclass=_ModelElementMeta):
         )
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         "str-based xsi:type handling is deprecated,"
         " use 'helpers.qtype_of(elem)' and 'etree.QName' instead"
     )
@@ -1906,7 +1902,9 @@ class CachedElementList[T: ModelObject](ElementList[T]):
         return newlist
 
 
-@deprecated("MixedElementList is deprecated, use base ElementList instead")
+@warnings.deprecated(
+    "MixedElementList is deprecated, use base ElementList instead"
+)
 class MixedElementList(ElementList[ModelElement]):
     """ElementList that handles proxies using ``XTYPE_HANDLERS``."""
 
@@ -2313,7 +2311,7 @@ def wrap_xml[T: ModelObject](
     return obj
 
 
-@deprecated(
+@warnings.deprecated(
     "find_wrapper is deprecated,"
     " use resolve_class_name or MelodyModel.resolve_class instead"
 )

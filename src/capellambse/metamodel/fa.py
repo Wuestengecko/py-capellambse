@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import enum
-import sys
 import typing as t
 import warnings
 
@@ -11,11 +10,6 @@ import capellambse.model as m
 
 from . import activity, behavior, capellacore, information, modellingcore
 from . import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.FA
 
@@ -368,12 +362,8 @@ class FunctionPort(
     represented_component_port = m.Single["ComponentPort"](
         m.Association((NS, "ComponentPort"), "representedComponentPort")
     )
-    realized_ports = m.Allocation["FunctionPort"](
-        None, None, (NS, "FunctionPort")
-    )
-    allocated_ports = m.Allocation["FunctionPort"](
-        None, None, (NS, "FunctionPort")
-    )
+    realized_ports = m.Allocation(None, None, (NS, "FunctionPort"))
+    allocated_ports = m.Allocation(None, None, (NS, "FunctionPort"))
     exchanges = m.Backref["FunctionalExchange"](
         (NS, "FunctionalExchange"), "source", "target"
     )
@@ -588,7 +578,7 @@ class ComponentExchange(
     )
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "ComponentExchange.allocating_physical_link is deprecated,"
             " because it only takes into account the first allocation link."
@@ -601,7 +591,7 @@ class ComponentExchange(
         return links[0] if links else None
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "ComponentExchange.owner is deprecated,"
             " because it only takes into account the first allocation link."

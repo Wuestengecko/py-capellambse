@@ -35,11 +35,6 @@ from capellambse import filehandler, helpers
 from capellambse.loader import exs
 from capellambse.loader.modelinfo import ModelInfo
 
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
-
 _UnspecifiedType = t.NewType("_UnspecifiedType", object)
 _NOT_SPECIFIED = _UnspecifiedType(object())
 
@@ -402,7 +397,7 @@ class ModelFile:
 
         self.root = new_root
 
-    @deprecated(
+    @warnings.deprecated(
         "iterall_xt() is deprecated,"
         " use iterall() or iter_qtypes() + iter_qtype() instead"
     )
@@ -778,7 +773,7 @@ class MelodyLoader:
     @contextlib.contextmanager
     def new_uuid(
         self, parent: etree._Element, *, want: str | None = None
-    ) -> cabc.Generator[str, None, None]:
+    ) -> cabc.Generator[str]:
         """Context Manager around :meth:`generate_uuid()`.
 
         This context manager yields a newly generated model-wide unique

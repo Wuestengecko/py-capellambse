@@ -219,7 +219,7 @@ def logtee(
     tee: bool = True,
     level: int | str | None = None,
     logger: str = "",
-) -> cabc.Generator[None, None, None]:
+) -> cabc.Generator[None]:
     """Temporarily write log messages to a file.
 
     This function adds an additional log handler, meaning that the

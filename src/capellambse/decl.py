@@ -352,7 +352,7 @@ def _operate_promise_id(
     promises: dict[Promise, capellambse.ModelObject],
     parent: capellambse.ModelObject,
     pid: t.Any,
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     del promises
     if isinstance(pid, str):
         promise = Promise(pid)
@@ -368,7 +368,7 @@ def _operate_create(
     promises: dict[Promise, capellambse.ModelObject],
     parent: capellambse.ModelObject,
     creations: dict[str, t.Any],
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     yield from _operate_extend(promises, parent, creations)
 
 
@@ -376,7 +376,7 @@ def _operate_extend(
     promises: dict[Promise, capellambse.ModelObject],
     parent: capellambse.ModelObject,
     extensions: dict[str, t.Any],
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     for attr, value in extensions.items():
         if not isinstance(value, cabc.Iterable):
             raise TypeError("values below `extend:*:` must be lists")
@@ -432,7 +432,7 @@ def _operate_set(
     promises: dict[Promise, capellambse.ModelObject],
     parent: capellambse.ModelObject,
     modifications: dict[str, t.Any],
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     for attr, value in modifications.items():
         if isinstance(value, list | Promise | _ObjectFinder):
             try:
@@ -456,7 +456,7 @@ def _operate_sync(
     promises: dict[Promise, capellambse.ModelObject],
     parent: capellambse.ModelObject,
     modifications: dict[str, t.Any],
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     for attr, value in modifications.items():
         if not isinstance(value, cabc.Iterable):
             raise TypeError("values below `extend:*:` must be lists")
@@ -633,7 +633,7 @@ def _create_complex_objects(
     parent: capellambse.ModelObject,
     attr: str,
     objs: cabc.Iterable[dict[str, t.Any] | Promise | str],
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     try:
         target = getattr(parent, attr)
     except AttributeError:
@@ -677,7 +677,7 @@ def _create_complex_object(
     attr: str,
     target: m.ElementListCouplingMixin,
     obj_desc: dict[str, t.Any],
-) -> cabc.Generator[_OperatorResult, t.Any, None]:
+) -> cabc.Generator[_OperatorResult]:
     try:
         promise: str | Promise | None = obj_desc.pop("promise_id")
     except KeyError:
