@@ -16,7 +16,6 @@ __all__ = [
 import collections.abc as cabc
 import contextlib
 import os
-import sys
 import typing as t
 import warnings
 
@@ -28,11 +27,6 @@ import capellambse.model as m
 from capellambse.metamodel import namespaces as ns
 
 from . import exporter, requirements
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 if t.TYPE_CHECKING:
     from capellambse.metamodel import capellacore  # noqa: F401
@@ -48,7 +42,7 @@ class CapellaTypesFolder(requirements.TypesFolder):
     _xmltag = "ownedExtensions"
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "CapellaTypesFolder.module_types is deprecated,"
             " use 'types.by_class(ModuleType)' instead"
@@ -59,7 +53,7 @@ class CapellaTypesFolder(requirements.TypesFolder):
         return self.types.by_class(requirements.ModuleType)
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "CapellaTypesFolder.relation_types is deprecated,"
             " use 'types.by_class(ModuleType)' instead"
@@ -70,7 +64,7 @@ class CapellaTypesFolder(requirements.TypesFolder):
         return self.types.by_class(requirements.RelationType)
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "CapellaTypesFolder.requirement_types is deprecated,"
             " use 'types.by_class(ModuleType)' instead"
@@ -92,7 +86,7 @@ class CapellaModule(requirements.Module):
     )
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "CapellaModule.folders is deprecated,"
             " use 'requirements.by_class(Folder)' instead"
@@ -375,7 +369,7 @@ class RequirementsRelationAccessor(
     @contextlib.contextmanager
     def purge_references(
         self, obj: m.ModelObject, target: m.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         """Do nothing.
 
         This is a no-op, as this accessor provides a virtual relation.
@@ -516,7 +510,7 @@ class ElementRelationAccessor(m.WritableAccessor[m.ModelElement]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: m.ModelObject, target: m.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         """Do nothing.
 
         This is a no-op, as this accessor provides a virtual relation.

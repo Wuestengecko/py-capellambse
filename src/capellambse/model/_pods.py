@@ -30,13 +30,11 @@ from lxml import etree
 
 from capellambse import helpers
 
-from . import E, U
-
 if t.TYPE_CHECKING:
     from . import _obj
 
 
-class BasePOD(t.Generic[U]):
+class BasePOD[T]:
     """A plain-old-data descriptor."""
 
     __slots__ = (
@@ -54,7 +52,7 @@ class BasePOD(t.Generic[U]):
         self,
         attribute: str,
         *,
-        default: U,
+        default: T,
         writable: bool,
     ) -> None:
         self.attribute = attribute
@@ -74,12 +72,12 @@ class BasePOD(t.Generic[U]):
     @t.overload
     def __get__(self, obj: None, objtype: type[t.Any]) -> te.Self: ...
     @t.overload
-    def __get__(self, obj: t.Any, objtype: type[t.Any] | None = None) -> U: ...
+    def __get__(self, obj: t.Any, objtype: type[t.Any] | None = None) -> T: ...
     def __get__(
         self,
         obj: t.Any | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | U:
+    ) -> te.Self | T:
         del objtype
         if obj is None:
             return self
@@ -90,7 +88,7 @@ class BasePOD(t.Generic[U]):
             return self.default
         return self._from_xml(obj, data)
 
-    def __set__(self, obj: t.Any, value: U | None) -> None:
+    def __set__(self, obj: t.Any, value: T | None) -> None:
         if not self.writable and self.attribute in obj._element.attrib:
             raise TypeError(f"{self._qualname} is not writable")
 
@@ -116,9 +114,9 @@ class BasePOD(t.Generic[U]):
         self.__objclass__ = owner
 
     @abc.abstractmethod
-    def _from_xml(self, obj: _obj.ModelElement, value: str, /) -> U: ...
+    def _from_xml(self, obj: _obj.ModelElement, value: str, /) -> T: ...
     @abc.abstractmethod
-    def _to_xml(self, obj: _obj.ModelElement, value: U, /) -> str | None: ...
+    def _to_xml(self, obj: _obj.ModelElement, value: T, /) -> str | None: ...
 
 
 class StringPOD(BasePOD[str]):
@@ -328,7 +326,7 @@ class DatetimePOD(BasePOD[datetime.datetime | None]):
         return self.re_set.sub("", formatted)
 
 
-class EnumPOD(BasePOD[E]):
+class EnumPOD[T: enum.Enum](BasePOD[T]):
     """A POD that can have one of a pretermined set of values.
 
     This works in much the same way as the StringPOD, except that the
@@ -349,9 +347,9 @@ class EnumPOD(BasePOD[E]):
     def __init__(
         self,
         attribute: str,
-        enumcls: type[E],
+        enumcls: type[T],
         /,
-        default: E | str | None = None,
+        default: T | str | None = None,
         *,
         writable: bool = True,
     ) -> None:
@@ -395,11 +393,11 @@ class EnumPOD(BasePOD[E]):
         super().__init__(attribute, default=default, writable=writable)
         self.enumcls = enumcls
 
-    def _from_xml(self, obj: _obj.ModelElement, value: str, /) -> E:
+    def _from_xml(self, obj: _obj.ModelElement, value: str, /) -> T:
         del obj
         return self.enumcls(value)
 
-    def _to_xml(self, obj: _obj.ModelElement, value: E | str, /) -> str | None:
+    def _to_xml(self, obj: _obj.ModelElement, value: T | str, /) -> str | None:
         del obj
         if isinstance(value, str):
             value = self.enumcls[value]

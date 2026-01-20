@@ -51,7 +51,7 @@ class LocalFileHandler(abc.FileHandler):
     @contextlib.contextmanager
     def write_transaction(
         self, *, dry_run: bool = False, **kw: t.Any
-    ) -> t.Generator[t.Mapping[str, t.Any], None, None]:
+    ) -> t.Generator[t.Mapping[str, t.Any]]:
         """Start a write transaction.
 
         During the transaction, file writes are redirected to temporary

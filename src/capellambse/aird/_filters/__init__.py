@@ -36,8 +36,6 @@ PLUGIN_PATH = (
     "/description/context.odesign#/"
 )
 
-_TDiagramElement = t.TypeVar("_TDiagramElement", bound=diagram.DiagramElement)
-
 
 def composite_filter(
     name: str,
@@ -95,10 +93,10 @@ def global_filter(name: str) -> cabc.Callable[[GlobalFilter], GlobalFilter]:
     return add_global_filter
 
 
-def setfilters(
+def setfilters[T: diagram.DiagramElement](
     seb: c.SemanticElementBuilder,
-    dgobject: _TDiagramElement,
-) -> _TDiagramElement:
+    dgobject: T,
+) -> T:
     """Set the filters on the element.
 
     This is phase 1 of composite filter execution.

@@ -25,8 +25,6 @@ import typing_extensions as te
 
 from capellambse import helpers
 
-_F = t.TypeVar("_F", bound="FileHandler")
-
 
 class FileHandler(metaclass=abc.ABCMeta):
     """Abstract super class for file handler implementations.
@@ -226,7 +224,7 @@ class FileHandler(metaclass=abc.ABCMeta):
         return fpath.is_file()
 
 
-class FilePath(os.PathLike[str], ira.Traversable, t.Generic[_F]):
+class FilePath[F: FileHandler](os.PathLike[str], ira.Traversable):
     """A path to a file in a file handler.
 
     This is an abstract class with FileHandler-agnostic implementations
@@ -239,7 +237,7 @@ class FilePath(os.PathLike[str], ira.Traversable, t.Generic[_F]):
     implementations if possible.
     """
 
-    def __init__(self, parent: _F, path: pathlib.PurePosixPath):
+    def __init__(self, parent: F, path: pathlib.PurePosixPath):
         ptype = type(parent)
         if (
             type(self).is_dir is FilePath.is_dir

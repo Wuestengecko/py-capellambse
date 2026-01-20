@@ -6,10 +6,9 @@ from __future__ import annotations
 
 __all__ = ["COLORS", "RGB", "STYLES", "CSSdef", "get_style"]
 
+import itertools
 import logging
 import typing as t
-
-from capellambse import helpers
 
 LOGGER = logging.getLogger(__name__)
 
@@ -104,7 +103,8 @@ class RGB(t.NamedTuple):
             slen = 6
         if slen == 6:
             r, g, b = (
-                int("".join(x), base=16) for x in helpers.batched(hs, 2)
+                int("".join(x), base=16)
+                for x in itertools.batched(hs, 2, strict=True)
             )
             return cls(r, g, b, alpha)
 

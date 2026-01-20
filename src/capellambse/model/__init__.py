@@ -7,14 +7,8 @@ from __future__ import annotations
 import collections.abc as cabc
 import enum
 import functools
-import sys
 import typing as t
 import warnings
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 VIRTUAL_NAMESPACE_PREFIX = (
     "https://dbinfrago.github.io/py-capellambse/virtual-namespace/"
@@ -26,21 +20,8 @@ Classes defined in a virtual namespace can be used with :class:`Containment`,
 objects with special functionality.
 """
 
-E = t.TypeVar("E", bound=enum.Enum)
-"""TypeVar for ":py:class:`~enum.Enum`"."""
-S = t.TypeVar("S", bound=str | None)
-"""TypeVar for ":py:class:`str` | None"."""
-T = t.TypeVar("T", bound="ModelObject")
-"""TypeVar for ":py:class:`capellambse.model.ModelObject`"."""
-T_co = t.TypeVar("T_co", bound="ModelObject", covariant=True)
-"""Covariant TypeVar for ":py:class:`capellambse.model.ModelObject`"."""
-U = t.TypeVar("U")
-"""TypeVar (unbound)."""
-U_co = t.TypeVar("U_co", covariant=True)
-"""Covariant TypeVar (unbound)."""
 
-
-@deprecated("set_accessor is deprecated and no longer needed")
+@warnings.deprecated("set_accessor is deprecated and no longer needed")
 def set_accessor(
     cls: type[ModelObject], attr: str, accessor: Accessor
 ) -> None:
@@ -48,17 +29,19 @@ def set_accessor(
     accessor.__set_name__(cls, attr)
 
 
-@deprecated("set_self_references is deprecated, use a 'Containment' instead")
+@warnings.deprecated(
+    "set_self_references is deprecated, use a 'Containment' instead"
+)
 def set_self_references(*args: tuple[type[ModelObject], str]) -> None:
     for cls, attr in args:
         setattr(cls, attr, DirectProxyAccessor(cls, aslist=ElementList))  # type: ignore[deprecated]
 
 
-@deprecated(
+@warnings.deprecated(
     '`@attr_equal("...")` is deprecated,'
     ' use `class X(ModelElement, eq="...")` instead'
 )
-def attr_equal(attr: str) -> cabc.Callable[[type[T]], type[T]]:
+def attr_equal[T: ModelObject](attr: str) -> cabc.Callable[[type[T]], type[T]]:
     def add_wrapped_eq(cls: type[T]) -> type[T]:
         orig_eq = cls.__eq__
 
@@ -85,24 +68,24 @@ def attr_equal(attr: str) -> cabc.Callable[[type[T]], type[T]]:
     return add_wrapped_eq
 
 
-def stringy_enum(et: type[E]) -> type[E]:
+def stringy_enum[T: enum.Enum](et: type[T]) -> type[T]:
     """Make an Enum stringy.
 
     This decorator makes an Enum's members compare equal to their
     respective ``name``.
     """
 
-    def __eq__(self: E, other: object) -> bool:
+    def __eq__(self: T, other: object) -> bool:
         if isinstance(other, type(self)):
             return self is other
         if isinstance(other, str):
             return self.name == other
         return NotImplemented
 
-    def __str__(self: E) -> str:
+    def __str__(self: T) -> str:
         return str(self.name)
 
-    def __hash__(self: E) -> int:
+    def __hash__(self: T) -> int:
         return hash(self.name)
 
     et.__eq__ = __eq__  # type: ignore[assignment, method-assign]
@@ -198,5 +181,48 @@ if not t.TYPE_CHECKING:
                     for cls in ns._classes.values()
                 ]
             }
+
+        if attr == "E":
+            warnings.warn(
+                "TypeVar declarations are deprecated, use PEP695-style type parameters instead, e.g.: def func[T: enum.Enum](arg: T)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return t.TypeVar("E", bound=enum.Enum)
+        if attr == "S":
+            warnings.warn(
+                "TypeVar declarations are deprecated, use PEP695-style type parameters instead, e.g.: def func[T: str | None](arg: T)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return t.TypeVar("S", bound=str | None)
+        if attr == "T":
+            warnings.warn(
+                "TypeVar declarations are deprecated, use PEP695-style type parameters instead, e.g.: def func[T: ModelObject](arg: T)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return t.TypeVar("T", bound=ModelObject)
+        if attr == "T_co":
+            warnings.warn(
+                "TypeVar declarations are deprecated, use PEP695-style type parameters instead, e.g.: def func[T: ModelObject](arg: T)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return t.TypeVar("T_co", bound=ModelObject, covariant=True)
+        if attr == "U":
+            warnings.warn(
+                "TypeVar declarations are deprecated, use PEP695-style type parameters instead, e.g.: def func[T](arg: T)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return t.TypeVar("U")
+        if attr == "U_co":
+            warnings.warn(
+                "TypeVar declarations are deprecated, use PEP695-style type parameters instead, e.g.: def func[T](arg: T)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return t.TypeVar("U_co", covariant=True)
 
         raise AttributeError(f"{__name__} has no attribute {attr}")

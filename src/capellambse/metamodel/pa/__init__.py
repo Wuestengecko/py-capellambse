@@ -5,18 +5,13 @@
 from __future__ import annotations
 
 import enum
-import sys
 import typing as t
+import warnings
 
 import capellambse.model as m
 
 from .. import capellacommon, cs, fa, information
 from .. import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.PA
 
@@ -128,7 +123,7 @@ class PhysicalArchitecture(cs.ComponentArchitecture):
         return self.component_pkg.components.by_is_actor(False, single=True)
 
     @property
-    def all_functions(self) -> m.ElementList[PhysicalFunction]:  # type: ignore[override]
+    def all_functions(self) -> m.ElementList[PhysicalFunction]:
         return self._model.search((NS, "PhysicalFunction"), below=self)
 
     @property
@@ -240,7 +235,7 @@ class PhysicalComponent(
     )
 
     @property
-    @deprecated(
+    @warnings.deprecated(
         (
             "PhysicalComponent.components is misleadingly named and deprecated;"
             " use 'related_components' instead"

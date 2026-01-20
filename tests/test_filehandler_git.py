@@ -69,7 +69,7 @@ def test_GitFileHandler_locks_repo_during_tasks(
     flocked_files: set[str] = set()
 
     @contextlib.contextmanager
-    def mock_flock(file: pathlib.Path) -> cabc.Generator[None, None, None]:
+    def mock_flock(file: pathlib.Path) -> cabc.Generator[None]:
         nonlocal flocked_files
         assert not flocked_files
         flocked_files.add(str(file))

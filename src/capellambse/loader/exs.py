@@ -39,11 +39,6 @@ except ImportError:
 else:
     HAS_NATIVE = True
 
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
-
 
 _UnspecifiedType = t.NewType("_UnspecifiedType", object)
 _NOT_SPECIFIED = _UnspecifiedType(object())
@@ -88,7 +83,7 @@ def to_string(tree: lxml.etree._Element, /) -> str:
     return payload.decode("utf-8")
 
 
-@deprecated("use serialize() with `declare_encoding=True` instead")
+@warnings.deprecated("use serialize() with `declare_encoding=True` instead")
 def to_bytes(
     tree: lxml.etree._Element,
     /,

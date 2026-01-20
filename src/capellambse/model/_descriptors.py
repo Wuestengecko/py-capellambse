@@ -40,7 +40,6 @@ import contextlib
 import itertools
 import logging
 import operator
-import sys
 import types
 import typing as t
 import warnings
@@ -52,13 +51,6 @@ from lxml import etree
 import capellambse
 from capellambse import helpers
 
-from . import T, T_co, U, U_co
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
-
 _NotSpecifiedType = t.NewType("_NotSpecifiedType", object)
 _NOT_SPECIFIED = _NotSpecifiedType(object())
 "Used to detect unspecified optional arguments"
@@ -66,11 +58,11 @@ _NOT_SPECIFIED = _NotSpecifiedType(object())
 LOGGER = logging.getLogger(__name__)
 
 
-@deprecated(
+@warnings.deprecated(
     "@xtype_handler is deprecated and no longer used,"
     " inherit from ModelElement instead"
 )
-def xtype_handler(
+def xtype_handler[T: _obj.ModelObject](
     arch: str | None = None, /, *xtypes: str
 ) -> cabc.Callable[[type[T]], type[T]]:
     """Register a class as handler for a specific ``xsi:type``.
@@ -82,7 +74,7 @@ def xtype_handler(
     return lambda i: i
 
 
-@deprecated("xsi:type strings are deprecated")
+@warnings.deprecated("xsi:type strings are deprecated")
 def build_xtype(class_: type[_obj.ModelObject]) -> str:
     ns: _obj.Namespace | None = getattr(class_, "__capella_namespace__", None)
     if ns is None:
@@ -149,7 +141,7 @@ class NewObject:
         return f"<new object {self._type_hint!r} ({kw})>"
 
 
-class Accessor(t.Generic[U_co], metaclass=abc.ABCMeta):
+class Accessor[T](metaclass=abc.ABCMeta):
     """Super class for all Accessor types."""
 
     __name__: str
@@ -167,13 +159,13 @@ class Accessor(t.Generic[U_co], metaclass=abc.ABCMeta):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> U_co: ...
+    ) -> T: ...
     @abc.abstractmethod
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | U_co:
+    ) -> te.Self | T:
         pass
 
     def __set__(self, obj: t.Any, value: t.Any) -> None:
@@ -215,13 +207,13 @@ class Accessor(t.Generic[U_co], metaclass=abc.ABCMeta):
             return f"(unknown {type(self).__name__} - call __set_name__)"
         return f"{self.__objclass__.__name__}.{self.__name__}"
 
-    def _resolve_super_attributes(
+    def _resolve_super_attributes(  # noqa: B027
         self, super_acc: Accessor[t.Any] | None
     ) -> None:
         pass
 
 
-class Alias(Accessor["U"], t.Generic[U]):
+class Alias[T](Accessor[T]):
     """Provides an alias to another attribute.
 
     Parameters
@@ -249,18 +241,18 @@ class Alias(Accessor["U"], t.Generic[U]):
         self,
         obj: _obj.ModelObject,
         objtype: type[t.Any] | None = ...,
-    ) -> U: ...
+    ) -> T: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | U:
+    ) -> te.Self | T:
         if obj is None:
             return self
         return getattr(obj, self.target)
 
     def __set__(
-        self, obj: _obj.ModelObject, value: U | cabc.Iterable[U]
+        self, obj: _obj.ModelObject, value: T | cabc.Iterable[T]
     ) -> None:
         setattr(obj, self.target, value)
 
@@ -297,7 +289,7 @@ class Alias(Accessor["U"], t.Generic[U]):
         )
 
 
-class DeprecatedAccessor(Accessor[T_co]):
+class DeprecatedAccessor[T: _obj.ModelObject](Accessor[T]):
     """Provides a deprecated alias to another attribute."""
 
     __slots__ = ("alternative",)
@@ -313,12 +305,12 @@ class DeprecatedAccessor(Accessor[T_co]):
         self,
         obj: _obj.ModelObject,
         objtype: type[t.Any] | None = ...,
-    ) -> T_co: ...
+    ) -> T: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | T_co:
+    ) -> te.Self | T:
         if obj is None:
             return self
 
@@ -364,7 +356,7 @@ class DeprecatedAccessor(Accessor[T_co]):
         )
 
 
-class Single(Accessor[T_co | None], t.Generic[T_co]):
+class Single[T: _obj.ModelObject](Accessor[T | None]):
     """An Accessor wrapper that ensures there is exactly one value.
 
     This Accessor is used to wrap other Accessors that return multiple
@@ -400,7 +392,7 @@ class Single(Accessor[T_co | None], t.Generic[T_co]):
 
     def __init__(
         self,
-        wrapped: Accessor[_obj.ElementList[T_co]],
+        wrapped: Accessor[_obj.ElementList[T]],
         enforce: bool = False,
     ) -> None:
         """Create a new single-value descriptor."""
@@ -412,10 +404,10 @@ class Single(Accessor[T_co | None], t.Generic[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = None
-    ) -> T_co | None: ...
+    ) -> T | None: ...
     def __get__(
         self, obj: _obj.ModelObject | None, objtype: t.Any | None = None
-    ) -> te.Self | T_co | None:
+    ) -> te.Self | T | None:
         """Retrieve the value of the attribute."""
         if obj is None:
             return self
@@ -469,7 +461,7 @@ class Single(Accessor[T_co | None], t.Generic[T_co]):
         return contextlib.nullcontext(None)
 
 
-class Relationship(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
+class Relationship[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
     list_type: type[_obj.ElementListCouplingMixin]
     list_extra_args: cabc.Mapping[str, t.Any]
     single_attr: str | None
@@ -497,20 +489,20 @@ class Relationship(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     @abc.abstractmethod
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         pass
 
     @abc.abstractmethod
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: cabc.Iterable[T_co | NewObject],
+        value: cabc.Iterable[T | NewObject],
     ) -> None:
         pass
 
@@ -522,10 +514,10 @@ class Relationship(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         self,
         elmlist: _obj.ElementListCouplingMixin,
         index: int,
-        value: T_co | NewObject,
+        value: T | NewObject,
         *,
         bounds: tuple[_obj.ClassName, ...] = (),
-    ) -> T_co:
+    ) -> T:
         """Insert the ``value`` object into the model.
 
         The object must be inserted at an appropriate place, so that, if
@@ -656,15 +648,16 @@ class Relationship(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             self.single_attr = super_acc.single_attr
 
 
-@deprecated("WritableAccessor is deprecated, use Relationship instead")
-class WritableAccessor(
-    Accessor["T_co | _obj.ElementList[T_co] | None"],
-    t.Generic[T_co],
+@warnings.deprecated(
+    "WritableAccessor is deprecated, use Relationship instead"
+)
+class WritableAccessor[T: _obj.ModelObject](
+    Accessor["T | _obj.ElementList[T] | None"]
 ):
     """An Accessor that also provides write support on lists it returns."""
 
     aslist: type[_obj.ElementListCouplingMixin] | None
-    class_: type[T_co]
+    class_: type[T]
     list_extra_args: cabc.Mapping[str, t.Any]
     single_attr: str | None
 
@@ -690,7 +683,7 @@ class WritableAccessor(
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: T_co | NewObject | cabc.Iterable[T_co | NewObject],
+        value: T | NewObject | cabc.Iterable[T | NewObject],
     ) -> None:
         raise TypeError(f"Cannot set {self} on {type(obj).__name__}")
 
@@ -700,7 +693,7 @@ class WritableAccessor(
         typehint: str | None = None,
         /,
         **kw: t.Any,
-    ) -> T_co:
+    ) -> T:
         """Create and return a new element of type ``elmclass``.
 
         Parameters
@@ -721,7 +714,7 @@ class WritableAccessor(
 
     def create_singleattr(
         self, elmlist: _obj.ElementListCouplingMixin, arg: t.Any, /
-    ) -> T_co:
+    ) -> T:
         """Create an element that only has a single attribute of interest."""
         if self.single_attr is None:
             raise TypeError(
@@ -758,7 +751,7 @@ class WritableAccessor(
         typehint: str | None,
         /,
         **kw: t.Any,
-    ) -> T_co:
+    ) -> T:
         if typehint:
             elmclass, _ = self._match_xtype(typehint)
         else:
@@ -777,7 +770,7 @@ class WritableAccessor(
         self,
         parent_obj: _obj.ModelObject,
         elements: list[etree._Element],
-    ) -> T_co | _obj.ElementList[T_co] | None:
+    ) -> T | _obj.ElementList[T] | None:
         assert hasattr(self, "class_")
         assert hasattr(self, "list_extra_args")
         if self.aslist is None:
@@ -790,17 +783,17 @@ class WritableAccessor(
             **self.list_extra_args,
         )
 
-    def _match_xtype(self, hint: str, /) -> tuple[type[T_co], str]:
+    def _match_xtype(self, hint: str, /) -> tuple[type[T], str]:
         """Find the right class for the given ``xsi:type``."""
         if not isinstance(hint, str):
             raise TypeError(
                 f"Expected str as first type, got {type(hint).__name__!r}"
             )
 
-        (cls,) = t.cast("tuple[type[T_co]]", _obj.find_wrapper(hint))
+        (cls,) = t.cast("tuple[type[T]]", _obj.find_wrapper(hint))
         return (cls, build_xtype(cls))  # type: ignore[deprecated]
 
-    def _guess_xtype(self) -> tuple[type[T_co], str]:
+    def _guess_xtype(self) -> tuple[type[T], str]:
         try:
             super_guess = super()._guess_xtype  # type: ignore[misc]
         except AttributeError:
@@ -897,10 +890,11 @@ class WritableAccessor(
         )
 
 
-@deprecated("PhysicalAccessor is deprecated, use Relationship instead")
-class PhysicalAccessor(
-    Accessor["T_co | _obj.ElementList[T_co] | None"],
-    t.Generic[T_co],
+@warnings.deprecated(
+    "PhysicalAccessor is deprecated, use Relationship instead"
+)
+class PhysicalAccessor[T: _obj.ModelObject](
+    Accessor["T | _obj.ElementList[T] | None"]
 ):
     """Helper super class for accessors that work with real elements."""
 
@@ -912,13 +906,13 @@ class PhysicalAccessor(
     )
 
     aslist: type[_obj.ElementList] | None
-    class_: type[T_co]
+    class_: type[T]
     list_extra_args: cabc.Mapping[str, t.Any]
     xtypes: cabc.Set[str]
 
     def __init__(
         self,
-        class_: type[T_co],
+        class_: type[T],
         xtypes: (
             str
             | type[_obj.ModelObject]
@@ -926,7 +920,7 @@ class PhysicalAccessor(
             | None
         ) = None,
         *,
-        aslist: type[_obj.ElementList[T_co]] | None = None,
+        aslist: type[_obj.ElementList[T]] | None = None,
         mapkey: str | None = None,
         mapvalue: str | None = None,
         fixed_length: int = 0,
@@ -961,7 +955,7 @@ class PhysicalAccessor(
         elif fixed_length < 0:
             raise ValueError("List length cannot be negative")
 
-    def _guess_xtype(self) -> tuple[type[T_co], str]:
+    def _guess_xtype(self) -> tuple[type[T], str]:
         """Try to guess the type of element that should be created."""
         if self.class_ is _obj.ModelElement or self.class_ is None:
             raise ValueError("Multiple object types that can be created")
@@ -975,7 +969,7 @@ class PhysicalAccessor(
         self,
         parent_obj: _obj.ModelElement,
         elements: list[etree._Element],
-    ) -> T_co | _obj.ElementList[T_co] | None:
+    ) -> T | _obj.ElementList[T] | None:
         if self.aslist is None:
             return no_list(self, parent_obj._model, elements, self.class_)
         return self.aslist(
@@ -986,22 +980,24 @@ class PhysicalAccessor(
         )
 
 
-@deprecated("DirectProxyAccessor is deprecated, use Containment instead")
-class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
+@warnings.deprecated(
+    "DirectProxyAccessor is deprecated, use Containment instead"
+)
+class DirectProxyAccessor[T: _obj.ModelObject](
+    WritableAccessor[T], PhysicalAccessor[T]
+):
     """Creates proxy objects on the fly."""
 
     __slots__ = ("follow_abstract", "rootelem")
 
     aslist: type[_obj.ElementListCouplingMixin] | None
-    class_: type[T_co]
+    class_: type[T]
     single_attr: str | None
 
     def __init__(
         self,
-        class_: type[T_co],
-        xtypes: (
-            str | type[T_co] | cabc.Iterable[str | type[T_co]] | None
-        ) = None,
+        class_: type[T],
+        xtypes: str | type[T] | cabc.Iterable[str | type[T]] | None = None,
         *,
         aslist: type[_obj.ElementList] | None = None,
         mapkey: str | None = None,
@@ -1091,12 +1087,12 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> T_co | _obj.ElementList[T_co] | None: ...
+    ) -> T | _obj.ElementList[T] | None: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[_obj.ModelElement] | None = None,
-    ) -> te.Self | T_co | _obj.ElementList[T_co] | None:
+    ) -> te.Self | T | _obj.ElementList[T] | None:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -1111,7 +1107,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: str | T_co | NewObject | cabc.Iterable[str | T_co | NewObject],
+        value: str | T | NewObject | cabc.Iterable[str | T | NewObject],
     ) -> None:
         if self.aslist:
             if isinstance(value, str) or not isinstance(value, cabc.Iterable):
@@ -1217,7 +1213,7 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         typehint: str | None = None,
         /,
         **kw: t.Any,
-    ) -> T_co:
+    ) -> T:
         if self.rootelem:
             raise TypeError(f"Cannot create objects on {self}")
 
@@ -1266,20 +1262,18 @@ class DirectProxyAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         yield
 
 
-@deprecated(
+@warnings.deprecated(
     "DeepProxyAccessor is deprecated, use @property and model.search() instead"
 )
-class DeepProxyAccessor(PhysicalAccessor[T_co]):
+class DeepProxyAccessor[T: _obj.ModelObject](PhysicalAccessor[T]):
     """A DirectProxyAccessor that searches recursively through the tree."""
 
     __slots__ = ()
 
     def __init__(
         self,
-        class_: type[T_co],
-        xtypes: (
-            str | type[T_co] | cabc.Iterable[str | type[T_co]] | None
-        ) = None,
+        class_: type[T],
+        xtypes: str | type[T] | cabc.Iterable[str | type[T]] | None = None,
         *,
         aslist: type[_obj.ElementList] | None = None,
         rootelem: (
@@ -1332,12 +1326,12 @@ class DeepProxyAccessor(PhysicalAccessor[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -1364,7 +1358,7 @@ class DeepProxyAccessor(PhysicalAccessor[T_co]):
             yield from ldr.iterdescendants_xt(root, *self.xtypes)
 
 
-class Allocation(Relationship[T_co]):
+class Allocation[T: _obj.ModelObject](Relationship[T]):
     """Accesses elements through reference elements."""
 
     __slots__ = ("alloc_type", "attr", "backattr", "class_", "tag")
@@ -1376,7 +1370,7 @@ class Allocation(Relationship[T_co]):
     backattr: str | None
 
     @t.overload
-    @deprecated(
+    @warnings.deprecated(
         "Raw classes, xsi:type strings and 'aslist' are deprecated,"
         " migrate to (Namespace, 'ClassName') tuples and drop aslist=..."
     )
@@ -1560,12 +1554,12 @@ class Allocation(Relationship[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -1593,7 +1587,7 @@ class Allocation(Relationship[T_co]):
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: T_co | NewObject | cabc.Iterable[T_co | NewObject],
+        value: T | NewObject | cabc.Iterable[T | NewObject],
     ) -> None:
         if not isinstance(value, cabc.Iterable):
             warnings.warn(
@@ -1608,10 +1602,10 @@ class Allocation(Relationship[T_co]):
             )
             value = (value,)
 
-        te.assert_type(value, cabc.Iterable[T_co | NewObject])
+        te.assert_type(value, cabc.Iterable[T | NewObject])
         if any(isinstance(i, NewObject) for i in value):
             raise TypeError(f"Cannot create objects on {self}")
-        value = t.cast("cabc.Iterable[T_co]", value)
+        value = t.cast("cabc.Iterable[T]", value)
 
         # TODO Remove this extra check when removing deprecated features
         if self.tag is None:
@@ -1741,10 +1735,10 @@ class Allocation(Relationship[T_co]):
         self,
         elmlist: _obj.ElementListCouplingMixin,
         index: int,
-        value: T_co | NewObject,
+        value: T | NewObject,
         *,
         bounds: tuple[_obj.ClassName, ...] = (),
-    ) -> T_co:
+    ) -> T:
         if self.tag is None:
             # TODO Change to RuntimeError when removing deprecated features
             raise NotImplementedError(f"Cannot set: XML tag not set on {self}")
@@ -1800,7 +1794,7 @@ class Allocation(Relationship[T_co]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         purge: list[etree._Element] = [
             ref
             for ref in self.__find_refs(obj)
@@ -1852,14 +1846,14 @@ class Allocation(Relationship[T_co]):
                 self.backattr = super_acc.backattr
 
 
-class Association(Relationship[T_co]):
+class Association[T: _obj.ModelObject](Relationship[T]):
     """Provides access to elements that are linked in an attribute."""
 
     __slots__ = ("attr", "class_")
 
     def __init__(
         self,
-        class_: type[T_co] | None | _obj.UnresolvedClassName,
+        class_: type[T] | None | _obj.UnresolvedClassName,
         attr: str | None,
         *,
         aslist: t.Any = _NOT_SPECIFIED,
@@ -1958,12 +1952,12 @@ class Association(Relationship[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -1985,7 +1979,7 @@ class Association(Relationship[T_co]):
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: T_co | NewObject | cabc.Iterable[T_co | NewObject],
+        value: T | NewObject | cabc.Iterable[T | NewObject],
     ) -> None:
         if not isinstance(value, cabc.Iterable):
             warnings.warn(
@@ -2000,10 +1994,10 @@ class Association(Relationship[T_co]):
             )
             value = (value,)
 
-        te.assert_type(value, cabc.Iterable[T_co | NewObject])
+        te.assert_type(value, cabc.Iterable[T | NewObject])
         if any(isinstance(i, NewObject) for i in value):
             raise TypeError("Cannot create new objects on an Association")
-        value = t.cast("cabc.Iterable[T_co]", value)
+        value = t.cast("cabc.Iterable[T]", value)
 
         if self.attr is None:
             raise RuntimeError(
@@ -2035,10 +2029,10 @@ class Association(Relationship[T_co]):
         self,
         elmlist: _obj.ElementListCouplingMixin,
         index: int,
-        value: T_co | NewObject,
+        value: T | NewObject,
         *,
         bounds: tuple[_obj.ClassName, ...] = (),
-    ) -> T_co:
+    ) -> T:
         if isinstance(value, NewObject):
             raise TypeError(f"Cannot create new objects on {self}")
         if value._model is not elmlist._parent._model:
@@ -2063,7 +2057,7 @@ class Association(Relationship[T_co]):
         self.__set_links(elmlist._parent, objs)
 
     def __set_links(
-        self, obj: _obj.ModelObject, values: cabc.Iterable[T_co]
+        self, obj: _obj.ModelObject, values: cabc.Iterable[T]
     ) -> None:
         if self.attr is None:
             raise RuntimeError(
@@ -2092,7 +2086,7 @@ class Association(Relationship[T_co]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         if self.attr is None:
             raise RuntimeError(
                 f"{type(self).__name__} was not initialized properly;"
@@ -2136,14 +2130,14 @@ class Association(Relationship[T_co]):
         self.attr = super_acc.attr
 
 
-@deprecated(
+@warnings.deprecated(
     "PhysicalLinkEndsAccessor is deprecated,"
     " use Association(..., fixed_length=2) instead"
 )
-class PhysicalLinkEndsAccessor(Association[T_co]):
+class PhysicalLinkEndsAccessor[T: _obj.ModelObject](Association[T]):
     def __init__(
         self,
-        class_: type[T_co] | None | _obj.UnresolvedClassName,
+        class_: type[T] | None | _obj.UnresolvedClassName,
         attr: str,
         *,
         aslist: t.Any = _NOT_SPECIFIED,
@@ -2160,7 +2154,7 @@ class PhysicalLinkEndsAccessor(Association[T_co]):
         )
 
 
-class IndexAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
+class IndexAccessor[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
     """Access a specific index in an ElementList of a fixed size."""
 
     __slots__ = ("index", "wrapped")
@@ -2175,12 +2169,12 @@ class IndexAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = None
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | T_co | _obj.ElementList[T_co]:
+    ) -> te.Self | T | _obj.ElementList[T]:
         if obj is None:
             return self
         container = getattr(obj, self.wrapped)
@@ -2217,12 +2211,12 @@ class IndexAccessor(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         )
 
 
-class AlternateAccessor(Accessor[T_co]):
+class AlternateAccessor[T: _obj.ModelObject](Accessor[T]):
     """Provides access to an "alternate" form of the object."""
 
     __slots__ = ("class_",)
 
-    def __init__(self, class_: type[T_co]):
+    def __init__(self, class_: type[T]):
         super().__init__()
         self.class_ = class_
 
@@ -2231,12 +2225,12 @@ class AlternateAccessor(Accessor[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> T_co: ...
+    ) -> T: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | T_co | None:
+    ) -> te.Self | T | None:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -2255,12 +2249,12 @@ class AlternateAccessor(Accessor[T_co]):
         )
 
 
-class ParentAccessor(Accessor["_obj.ModelObject"]):
+class ParentAccessor[T: _obj.ModelObject](Accessor["_obj.ModelObject"]):
     """Accesses the parent XML element."""
 
     __slots__ = ()
 
-    def __init__(self, class_: type[T_co] | None = None):
+    def __init__(self, class_: type[T] | None = None):
         del class_
         super().__init__()
 
@@ -2286,8 +2280,10 @@ class ParentAccessor(Accessor["_obj.ModelObject"]):
         return _obj.wrap_xml(obj._model, parent)
 
 
-@deprecated("AttributeMatcherAccessor is deprecated, use Filter instead")
-class AttributeMatcherAccessor(DirectProxyAccessor[T_co]):
+@warnings.deprecated(
+    "AttributeMatcherAccessor is deprecated, use Filter instead"
+)
+class AttributeMatcherAccessor[T: _obj.ModelObject](DirectProxyAccessor[T]):
     __slots__ = (
         "_AttributeMatcherAccessor__aslist",
         "attributes",
@@ -2295,10 +2291,8 @@ class AttributeMatcherAccessor(DirectProxyAccessor[T_co]):
 
     def __init__(
         self,
-        class_: type[T_co],
-        xtypes: (
-            str | type[T_co] | cabc.Iterable[str | type[T_co]] | None
-        ) = None,
+        class_: type[T],
+        xtypes: str | type[T] | cabc.Iterable[str | type[T]] | None = None,
         *,
         aslist: type[_obj.ElementList] | None = None,
         attributes: dict[str, t.Any],
@@ -2315,12 +2309,12 @@ class AttributeMatcherAccessor(DirectProxyAccessor[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> T_co | _obj.ElementList[T_co] | None: ...
+    ) -> T | _obj.ElementList[T] | None: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[_obj.ModelObject] | None = None,
-    ) -> te.Self | T_co | _obj.ElementList[T_co] | None:
+    ) -> te.Self | T | _obj.ElementList[T] | None:
         if obj is None:  # pragma: no cover
             return self
 
@@ -2463,7 +2457,7 @@ class SpecificationAccessor(Accessor[_Specification]):
         return _Specification(obj._model, spec_elm)
 
 
-class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
+class Backref[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
     """Searches for references to the current element elsewhere."""
 
     __slots__ = ("attrs", "target_classes")
@@ -2475,7 +2469,7 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def __init__(
         self,
         class_: (
-            type[T_co]
+            type[T]
             | tuple[type[_obj.ModelObject], ...]
             | _obj.UnresolvedClassName
         ),
@@ -2577,12 +2571,12 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -2619,7 +2613,7 @@ class Backref(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         )
 
 
-class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
+class Filter[T: _obj.ModelObject](Accessor["_obj.ElementList[T]"]):
     """Provides access to a filtered subset of another attribute."""
 
     __slots__ = ("attr", "class_", "wrapped")
@@ -2638,7 +2632,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         self.attr = attr
         self.class_ = _obj.resolve_class_name(class_)
         self.list_type = make_coupled_list_type(self)
-        self.wrapped: Relationship[T_co] | None = None
+        self.wrapped: Relationship[T] | None = None
         self.list_extra_args = {
             "legacy_by_type": legacy_by_type,
         }
@@ -2648,12 +2642,12 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         if obj is None:  # pragma: no cover
             return self
 
@@ -2686,7 +2680,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: cabc.Iterable[T_co | NewObject],
+        value: cabc.Iterable[T | NewObject],
     ) -> None:
         if self.wrapped is None:
             raise RuntimeError(
@@ -2741,10 +2735,10 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
         self,
         elmlist: _obj.ElementListCouplingMixin,
         index: int,
-        value: T_co | NewObject,
+        value: T | NewObject,
         *,
         bounds: tuple[_obj.ClassName, ...] = (),
-    ) -> T_co:
+    ) -> T:
         if self.wrapped is None:
             raise RuntimeError(
                 f"{type(self).__name__} was not initialized properly;"
@@ -2788,7 +2782,7 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
     @contextlib.contextmanager
     def purge_references(
         self, obj: _obj.ModelObject, target: _obj.ModelObject
-    ) -> cabc.Generator[None, None, None]:
+    ) -> cabc.Generator[None]:
         if self.wrapped is None:
             raise RuntimeError(
                 f"{type(self).__name__} was not initialized properly;"
@@ -2800,12 +2794,14 @@ class Filter(Accessor["_obj.ElementList[T_co]"], t.Generic[T_co]):
             yield
 
 
-@deprecated(
+@warnings.deprecated(
     "TypecastAccessor is deprecated,"
     " use Filter to perform filtering"
     " or Alias to create an unfiltered Alias"
 )
-class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
+class TypecastAccessor[T: _obj.ModelObject](
+    WritableAccessor[T], PhysicalAccessor[T]
+):
     """Changes the static type of the value of another accessor.
 
     This is useful for when a class has an attribute that is
@@ -2819,11 +2815,11 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     """
 
     aslist: type[_obj.ElementListCouplingMixin] | None
-    class_: type[T_co]
+    class_: type[T]
 
     def __init__(
         self,
-        cls: type[T_co],
+        cls: type[T],
         attr: str,
         mapkey: str | None = None,
         mapvalue: str | None = None,
@@ -2842,12 +2838,12 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = None
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         del objtype
         if obj is None:
             return self
@@ -2857,7 +2853,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: T_co | NewObject | cabc.Iterable[T_co | NewObject],
+        value: T | NewObject | cabc.Iterable[T | NewObject],
     ) -> None:
         if isinstance(value, list | _obj.ElementList | tuple):
             pass
@@ -2897,7 +2893,7 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
         typehint: str | None = None,
         /,
         **kw: t.Any,
-    ) -> T_co:
+    ) -> T:
         if typehint:
             raise TypeError(f"{self._qualname} does not support type hints")
         acc: WritableAccessor = getattr(self.class_, self.attr)
@@ -2937,24 +2933,24 @@ class TypecastAccessor(WritableAccessor[T_co], PhysicalAccessor[T_co]):
             yield
 
 
-class Containment(Relationship[T_co]):
+class Containment[T: _obj.ModelObject](Relationship[T]):
     __slots__ = ("classes", "role_tag")
 
     aslist: type[_obj.ElementListCouplingMixin]
     alternate: type[_obj.ModelObject] | None
 
     @t.overload
-    @deprecated(
+    @warnings.deprecated(
         "Raw classes, xsi:type strings and 'aslist' are deprecated,"
         " migrate to (Namespace, 'ClassName') tuples and drop aslist=..."
     )
     def __init__(
         self,
         role_tag: str,
-        classes: type[T_co] | cabc.Iterable[type[_obj.ModelObject]] = ...,
+        classes: type[T] | cabc.Iterable[type[_obj.ModelObject]] = ...,
         /,
         *,
-        aslist: type[_obj.ElementList[T_co]] | None = ...,
+        aslist: type[_obj.ElementList[T]] | None = ...,
         mapkey: str | None = ...,
         mapvalue: str | None = ...,
         alternate: type[_obj.ModelObject] | None = ...,
@@ -2986,7 +2982,7 @@ class Containment(Relationship[T_co]):
         self,
         role_tag: str,
         class_: (
-            type[T_co]
+            type[T]
             | cabc.Iterable[type[_obj.ModelObject]]
             | _obj.UnresolvedClassName
         ) = (),
@@ -3059,12 +3055,12 @@ class Containment(Relationship[T_co]):
     @t.overload
     def __get__(
         self, obj: _obj.ModelObject, objtype: type[t.Any] | None = ...
-    ) -> _obj.ElementList[T_co]: ...
+    ) -> _obj.ElementList[T]: ...
     def __get__(
         self,
         obj: _obj.ModelObject | None,
         objtype: type[t.Any] | None = None,
-    ) -> te.Self | _obj.ElementList[T_co]:
+    ) -> te.Self | _obj.ElementList[T]:
         del objtype
         if obj is None:  # pragma: no cover
             return self
@@ -3088,7 +3084,7 @@ class Containment(Relationship[T_co]):
     def __set__(
         self,
         obj: _obj.ModelObject,
-        value: cabc.Iterable[str | T_co | NewObject],
+        value: cabc.Iterable[str | T | NewObject],
     ) -> None:
         if isinstance(value, str) or not isinstance(value, cabc.Iterable):
             warnings.warn(
@@ -3124,10 +3120,10 @@ class Containment(Relationship[T_co]):
         self,
         elmlist: _obj.ElementListCouplingMixin,
         index: int,
-        value: T_co | NewObject,
+        value: T | NewObject,
         *,
         bounds: tuple[_obj.ClassName, ...] = (),
-    ) -> T_co:
+    ) -> T:
         if self.role_tag is None:
             raise RuntimeError(
                 f"{type(self).__name__} was not initialized properly;"
@@ -3212,7 +3208,7 @@ class Containment(Relationship[T_co]):
         *,
         bounds: tuple[_obj.ClassName, ...],
         hint: str,
-    ) -> list[type[T_co]]:
+    ) -> list[type[T]]:
         clsbounds = tuple(
             model.resolve_class(i) for i in bounds or ("ModelElement",)
         )
@@ -3250,7 +3246,7 @@ class Containment(Relationship[T_co]):
             else:
                 raise ValueError(f"Invalid type hint: {hint}")
 
-        return t.cast("list[type[T_co]]", classes)
+        return t.cast("list[type[T]]", classes)
 
     def _insert_create(
         self,
@@ -3259,7 +3255,7 @@ class Containment(Relationship[T_co]):
         value: NewObject,
         *,
         bounds: tuple[_obj.ClassName, ...],
-    ) -> T_co:
+    ) -> T:
         classes = self._find_candidate_classes(
             model, bounds=bounds, hint=value._type_hint
         )
@@ -3310,12 +3306,12 @@ class Containment(Relationship[T_co]):
         super()._resolve_super_attributes(super_acc)
 
 
-def no_list(
+def no_list[T: _obj.ModelObject](
     desc: Accessor,
     model: capellambse.MelodyModel,
     elems: cabc.Sequence[etree._Element],
-    class_: type[T_co],
-) -> T_co | None:
+    class_: type[T],
+) -> T | None:
     """Return a single element or None instead of a list of elements.
 
     Parameters
@@ -3353,7 +3349,7 @@ def make_coupled_list_type(
     return list_type
 
 
-def _find_all_subclasses(cls: type[U]) -> dict[type[U], None]:
+def _find_all_subclasses[T](cls: type[T]) -> dict[type[T], None]:
     classes = {cls: None}
     for scls in cls.__subclasses__():
         classes.update(_find_all_subclasses(scls))

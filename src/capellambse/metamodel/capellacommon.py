@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import enum
-import sys
 import typing as t
 import warnings
 
@@ -11,11 +10,6 @@ import capellambse.model as m
 
 from . import behavior, capellacore, modellingcore
 from . import namespaces as ns
-
-if sys.version_info >= (3, 13):
-    from warnings import deprecated
-else:
-    from typing_extensions import deprecated
 
 NS = ns.CAPELLACOMMON
 
@@ -63,7 +57,9 @@ class GenericTrace(capellacore.Trace):
     )
 
     @property
-    @deprecated("Synthetic names are deprecated", category=FutureWarning)
+    @warnings.deprecated(
+        "Synthetic names are deprecated", category=FutureWarning
+    )
     def name(self) -> str:
         myname = type(self).__name__
         if self.target is not None:
