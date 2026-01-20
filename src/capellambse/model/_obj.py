@@ -51,7 +51,7 @@ from lxml import etree
 import capellambse
 from capellambse import helpers
 
-from . import VIRTUAL_NAMESPACE_PREFIX, T, U, _descriptors, _pods, _styleclass
+from . import VIRTUAL_NAMESPACE_PREFIX, _descriptors, _pods, _styleclass
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -68,20 +68,18 @@ CORE_VIEWPOINT = "org.polarsys.capella.core.viewpoint"
 _NOT_SPECIFIED = object()
 "Used to detect unspecified optional arguments"
 
-_MapFunction: te.TypeAlias = (
-    "cabc.Callable[[T], ModelElement | cabc.Iterable[ModelElement]]"
-)
+type _MapFunction[T: ModelObject] = cabc.Callable[
+    [T], ModelElement | cabc.Iterable[ModelElement]
+]
 
 _TERMCELL: tuple[int, int] | None = None
 _ICON_CACHE: dict[tuple[str, str, int], t.Any] = {}
 
 
-UnresolvedClassName: t.TypeAlias = (
-    "tuple[str | capellambse.model.Namespace, str]"
-)
+type UnresolvedClassName = tuple[str | capellambse.model.Namespace, str]
 """A tuple of namespace URI and class name."""
 
-ClassName: t.TypeAlias = "tuple[capellambse.model.Namespace, str]"
+type ClassName = tuple[capellambse.model.Namespace, str]
 """A tuple of Namespace object and class name."""
 
 
@@ -234,11 +232,11 @@ class Namespace:
         else:
             object.__setattr__(self, "maxver", None)
 
-        ClassTuple: te.TypeAlias = """tuple[
+        type ClassTuple = tuple[
             type[ModelObject],
             av.AwesomeVersion,
             av.AwesomeVersion | None,
-        ]"""
+        ]
         self._classes: dict[str, list[ClassTuple]]
         object.__setattr__(self, "_classes", collections.defaultdict(list))
 
@@ -599,7 +597,7 @@ class ModelElement(metaclass=_ModelElementMeta):
         lambda self: self._model.diagrams.by_semantic_nodes(self)
     )
 
-    parent = _descriptors.ParentAccessor()
+    parent = _descriptors.ParentAccessor["ModelElement"]()
     extensions: _descriptors.Containment[ModelElement]
     constraints: _descriptors.Containment[mm.capellacore.Constraint]
 
@@ -1135,7 +1133,7 @@ class ModelElement(metaclass=_ModelElementMeta):
             )
 
 
-class ElementList(cabc.MutableSequence[T], t.Generic[T]):
+class ElementList[T: ModelObject](cabc.MutableSequence[T]):
     """Provides access to elements without affecting the underlying model."""
 
     __slots__ = (
@@ -1475,8 +1473,8 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
     @t.overload
     def get(self, key: str) -> T | None: ...
     @t.overload
-    def get(self, key: str, default: U) -> T | U: ...
-    def get(self, key: str, default: t.Any = None) -> t.Any:
+    def get[U](self, key: str, default: U) -> T | U: ...
+    def get[U](self, key: str, default: U | None = None) -> T | U | None:
         try:
             return self[key]
         except KeyError:
@@ -1600,7 +1598,7 @@ class ElementList(cabc.MutableSequence[T], t.Generic[T]):
 
 if t.TYPE_CHECKING:
 
-    class _ListFilterSingle(t.Generic[T, U]):
+    class _ListFilterSingle[T: ModelObject, U]:
         """Same as _ListFilter, but typed with 'single' defaulting to True."""
 
         def __init__(self, arg: te.Never) -> te.Never: ...
@@ -1623,23 +1621,23 @@ if t.TYPE_CHECKING:
         # neither of which supports chaining further attributes
         def __getattr__(self, attr: str) -> te.Never: ...
 
-    _T = t.TypeVar("_T", bound=ModelObject)
-
-    class _ListFilterClass(t.Generic[T]):
+    class _ListFilterClass[T: ModelObject, U]:
         """Same as _ListFilter, but specifically typed for 'by_class'."""
 
         def __init__(self, arg: te.Never) -> te.Never: ...
 
         @t.overload
-        def __call__(self, *v: type[_T], single: t.Literal[True]) -> _T: ...
+        def __call__[T2: ModelObject](
+            self, *v: type[T2], single: t.Literal[True]
+        ) -> T2: ...
         @t.overload
-        def __call__(
-            self, *v: type[_T], single: t.Literal[False] | None = ...
-        ) -> ElementList[_T]: ...
+        def __call__[T2: ModelObject](
+            self, *v: type[T2], single: t.Literal[False] | None = ...
+        ) -> ElementList[T2]: ...
         @t.overload
-        def __call__(
-            self, *v: type[_T], single: bool
-        ) -> _T | ElementList[_T]: ...
+        def __call__[T2: ModelObject](
+            self, *v: type[T2], single: bool
+        ) -> T2 | ElementList[T2]: ...
         @t.overload
         def __call__(
             self, *v: str | UnresolvedClassName, single: t.Literal[True]
@@ -1663,7 +1661,7 @@ if t.TYPE_CHECKING:
         def __getattr__(self, attr: str) -> te.Never: ...
 
 
-class _ListFilter(t.Generic[T]):
+class _ListFilter[T: ModelObject]:
     """Filters this list based on an extractor function."""
 
     __slots__ = ("_attr", "_lower", "_parent", "_positive", "_single")
@@ -1851,7 +1849,7 @@ class _ListFilter(t.Generic[T]):
         )
 
 
-class CachedElementList(ElementList[T], t.Generic[T]):
+class CachedElementList[T: ModelObject](ElementList[T]):
     """An ElementList that caches the constructed proxies by UUID."""
 
     def __init__(
@@ -1957,7 +1955,7 @@ class ElementListMapKeyView(cabc.Sequence):
         return f"{type(self).__name__}({list(self)!r})"
 
 
-class ElementListMapItemsView(cabc.Sequence[tuple[t.Any, T]], t.Generic[T]):
+class ElementListMapItemsView[T: ModelObject](cabc.Sequence[tuple[t.Any, T]]):
     def __init__(self, parent: ElementList[t.Any], /) -> None:
         self.__parent = parent
 
@@ -1983,7 +1981,7 @@ class ElementListMapItemsView(cabc.Sequence[tuple[t.Any, T]], t.Generic[T]):
         return f"{type(self).__name__}({list(self)!r})"
 
 
-class ElementListCouplingMixin(ElementList[T], t.Generic[T]):
+class ElementListCouplingMixin[T: ModelObject](ElementList[T]):
     """Couples an ElementList with an Accessor to enable write support.
 
     This class is meant to be subclassed further, where the subclass has
@@ -2261,10 +2259,10 @@ def wrap_xml(
     model: capellambse.MelodyModel, element: etree._Element, /
 ) -> t.Any: ...
 @t.overload
-def wrap_xml(
+def wrap_xml[T: ModelObject](
     model: capellambse.MelodyModel, element: etree._Element, /, type: type[T]
 ) -> T: ...
-def wrap_xml(
+def wrap_xml[T: ModelObject](
     model: capellambse.MelodyModel,
     element: etree._Element,
     /,

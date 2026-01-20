@@ -16,7 +16,7 @@ dynamic = ["version"]
 name = "capellambse"
 description = "Provides access to Capella MBSE projects in Python"
 readme = "README.md"
-requires-python = ">=3.11, <3.15"
+requires-python = ">=3.12, <3.15"
 license = "Apache-2.0 AND OFL-1.1"
 license-files = ["LICENSES/*.txt"]
 authors = [{ name = "DB InfraGO AG" }]
@@ -27,7 +27,6 @@ classifiers = [
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -215,7 +214,7 @@ exclude_also = [
 skip_covered = true
 
 [tool.distutils.bdist_wheel]
-py_limited_api = "cp311"
+py_limited_api = "cp312"
 
 [tool.docformatter]
 wrap-descriptions = 72
@@ -231,7 +230,7 @@ warn_redundant_casts = true
 warn_unreachable = true
 warn_unused_ignores = true
 plugins = ["mypypp.deprecated"]
-python_version = "3.11"
+python_version = "3.12"
 
 [[tool.mypy.overrides]]
 # Untyped third party libraries

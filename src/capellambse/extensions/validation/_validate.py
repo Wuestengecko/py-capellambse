@@ -37,9 +37,6 @@ else:
     from typing_extensions import deprecated
 
 LOGGER = logging.getLogger(__name__)
-_T_co = t.TypeVar(
-    "_T_co", covariant=True, bound=t.Union[m.ModelElement, "VirtualType"]
-)
 
 NS = m.Namespace(
     m.VIRTUAL_NAMESPACE_PREFIX + "capellambse/virtual/validation",
@@ -48,10 +45,10 @@ NS = m.Namespace(
 
 
 @dataclasses.dataclass(frozen=True)
-class VirtualType(t.Generic[_T_co]):
+class VirtualType[T: m.ModelElement | VirtualType]:
     name: str
-    real_type: type[_T_co]
-    filter: cabc.Callable[[_T_co], bool]
+    real_type: type[T]
+    filter: cabc.Callable[[T], bool]
 
     def search(self, model_: capellambse.MelodyModel) -> m.ElementList:
         assert isinstance(self.real_type, str | type(m.ModelElement))
@@ -62,7 +59,7 @@ class VirtualType(t.Generic[_T_co]):
 
 
 @dataclasses.dataclass(frozen=True)
-class RealType(t.Generic[_T_co]):
+class RealType[T: m.ModelElement | VirtualType]:
     class_: m.ClassName
 
     @property
@@ -112,15 +109,17 @@ class _VirtualTypesRegistry(cabc.Mapping[str, VirtualType | RealType]):
 _types_registry = _VirtualTypesRegistry()
 
 
-def virtual_type(
-    real_type: str | type[_T_co],
-) -> cabc.Callable[[cabc.Callable[[_T_co], bool]], VirtualType[_T_co]]:
+def virtual_type[T: m.ModelElement | VirtualType](
+    real_type: str | type[T],
+) -> cabc.Callable[[cabc.Callable[[T], bool]], VirtualType[T]]:
     if isinstance(real_type, str):
-        (cls,) = t.cast("tuple[type[_T_co], ...]", m.find_wrapper(real_type))
+        (cls,) = t.cast("tuple[type[T], ...]", m.find_wrapper(real_type))
     else:
         cls = real_type
 
-    def decorate(func: cabc.Callable[[_T_co], bool]) -> VirtualType[_T_co]:
+    def decorate(func: cabc.Callable[[T], bool]) -> VirtualType[T]:
+        assert hasattr(func, "__name__")
+        assert isinstance(func.__name__, str)
         vtype = VirtualType(func.__name__, cls, func)
         _types_registry.register(vtype)
         return vtype
@@ -181,7 +180,7 @@ class Result:
 
 
 @dataclasses.dataclass(frozen=True)
-class Rule(t.Generic[_T_co]):
+class Rule[T: m.ModelElement | VirtualType]:
     """A validation rule."""
 
     id: str
@@ -190,11 +189,11 @@ class Rule(t.Generic[_T_co]):
     rationale: str
     category: Category
     action: str
-    validate: cabc.Callable[[_T_co], bool]
+    validate: cabc.Callable[[T], bool]
 
     def find_objects(
         self, model_: capellambse.MelodyModel
-    ) -> cabc.Iterator[_T_co]:
+    ) -> cabc.Iterator[T]:
         seen: set[str] = set()
         for i in self.types:
             for obj in _types_registry[i].search(model_):
@@ -344,7 +343,7 @@ def rule(
     action: str,
     types: (
         str
-        | VirtualType[m.ModelElement]
+        | VirtualType[t.Any]
         | type[m.ModelElement]
         | cabc.Iterable[
             str | VirtualType[m.ModelElement] | type[m.ModelElement]

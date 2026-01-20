@@ -754,7 +754,7 @@ class FindBy:
     attributes: cabc.Mapping[str, t.Any]
 
 
-_ObjectFinder: t.TypeAlias = UUIDReference | FindBy
+type _ObjectFinder = UUIDReference | FindBy
 
 
 class YDMDumper(yaml.SafeDumper):

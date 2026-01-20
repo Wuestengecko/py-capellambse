@@ -63,7 +63,7 @@ class CommitEntry:
     subject: str
 
 
-ParsedCommitLog: t.TypeAlias = dict[CommitType, list[CommitEntry]]
+type ParsedCommitLog = dict[CommitType, list[CommitEntry]]
 
 
 def _validate_version_tag(

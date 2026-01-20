@@ -83,7 +83,6 @@ _UUID_GENERATOR = random.Random(os.getenv("CAPELLAMBSE_UUID_SEED") or None)
 
 UUIDString = t.NewType("UUIDString", str)
 """A string that represents a unique ID within the model."""
-_T = t.TypeVar("_T")
 
 
 def flatten_html_string(text: str) -> str:
@@ -443,14 +442,14 @@ def make_short_html(
     return markupsafe.Markup(f"{link}: {value} ({uuid})")
 
 
-def ssvparse(
+def ssvparse[T](
     string: str,
-    cast: cabc.Callable[[str], _T],
+    cast: cabc.Callable[[str], T],
     *,
     parens: cabc.Sequence[str] = ("", ""),
     sep: str = ",",
     num: int = 0,
-) -> list[_T]:
+) -> list[T]:
     """Parse a string of ``sep``-separated values wrapped in ``parens``.
 
     Parameters
@@ -469,7 +468,7 @@ def ssvparse(
 
     Returns
     -------
-    list[_T]
+    list[T]
         A list of values cast into the given type.
 
     Raises
@@ -1098,20 +1097,20 @@ def xtype_of(elem: etree._Element) -> str | None:
 
 # More iteration tools
 @t.overload
-def ntuples(
-    num: int, iterable: cabc.Iterable[_T], *, pad: t.Literal[False] = ...
-) -> cabc.Iterator[tuple[_T, ...]]: ...
+def ntuples[T](
+    num: int, iterable: cabc.Iterable[T], *, pad: t.Literal[False] = ...
+) -> cabc.Iterator[tuple[T, ...]]: ...
 @t.overload
-def ntuples(
-    num: int, iterable: cabc.Iterable[_T], *, pad: t.Literal[True]
-) -> cabc.Iterator[tuple[_T | None, ...]]: ...
+def ntuples[T](
+    num: int, iterable: cabc.Iterable[T], *, pad: t.Literal[True]
+) -> cabc.Iterator[tuple[T | None, ...]]: ...
 @deprecated("Use 'itertools.batched' (or the backport in helpers) instead")
-def ntuples(
+def ntuples[T](
     num: int,
-    iterable: cabc.Iterable[_T],
+    iterable: cabc.Iterable[T],
     *,
     pad: bool = False,
-) -> cabc.Iterator[tuple[_T | None, ...]]:
+) -> cabc.Iterator[tuple[T | None, ...]]:
     r"""Yield N items of ``iterable`` at once.
 
     Parameters
@@ -1145,9 +1144,9 @@ if sys.version_info >= (3, 13):
     from itertools import batched
 else:
 
-    def batched(
-        it: cabc.Iterable[_T], n: int, /, *, strict: bool = False
-    ) -> cabc.Iterable[tuple[_T, ...]]:
+    def batched[T](
+        it: cabc.Iterable[T], n: int, /, *, strict: bool = False
+    ) -> cabc.Iterable[tuple[T, ...]]:
         if n < 1:
             raise ValueError("n must be at least one")
         it = iter(it)

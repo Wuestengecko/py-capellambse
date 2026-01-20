@@ -7,6 +7,7 @@ Python-Capellambse
 ==================
 
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/capellambse)
+[![SPEC 0 — Minimum Supported Dependencies](https://img.shields.io/badge/SPEC-0-green?labelColor=%23004811&color=%235CA038)](https://scientific-python.org/specs/spec-0000/)
 ![Code QA](https://github.com/dbinfrago/py-capellambse/actions/workflows/code-qa.yml/badge.svg)
 ![License: Apache-2.0](https://img.shields.io/github/license/dbinfrago/py-capellambse)
 ![REUSE status](https://api.reuse.software/badge/github.com/dbinfrago/py-capellambse)
