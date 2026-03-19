@@ -8,7 +8,7 @@ import pytest
 import capellambse
 from capellambse import aird, diagram, loader
 
-from .conftest import Models  # type: ignore
+from .conftest import Models
 
 
 class TestAIRDBasicFunctionality:

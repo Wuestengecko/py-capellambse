@@ -94,7 +94,8 @@ repos:
       - id: docformatter
         name: docformatter
         language: system
-        entry: uv run --dev docformatter --in-place
+        entry: uv run --dev docformatter
+        args: [--in-place]
         types_or: [python]
         require_serial: true
   - repo: local # ruff
@@ -108,20 +109,21 @@ repos:
       - id: ruff-check
         name: Lint with ruff
         language: system
-        entry: uv run --dev ruff check --output-format=concise
+        entry: uv run --dev ruff check
+        args: [--output-format=concise, --extend-ignore=FIX, --fix]
         types_or: [python, pyi, jupyter]
-        args: [--extend-ignore=FIX, --fix]
         require_serial: true
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.10
     hooks:
       - id: actionlint-docker
-  - repo: local # mypy
+  - repo: local # ty
     hooks:
-      - id: mypy
-        name: mypy
+      - id: ty
+        name: ty
         language: system
-        entry: uv run --dev --group test --group typecheck mypy src/capellambse tests
+        entry: uv run --dev --group test --group typecheck ty check
+        args: [--output-format=concise]
         types_or: [python, pyi, toml, yaml]
         require_serial: true
         pass_filenames: false

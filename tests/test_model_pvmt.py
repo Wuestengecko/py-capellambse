@@ -10,7 +10,7 @@ import capellambse
 from capellambse import helpers
 from capellambse.extensions import pvmt
 
-from .conftest import Models  # type: ignore
+from .conftest import Models
 
 TEST_ROOT = Models.pvmt
 EXPECT_ROOT = Models.pvmt / "expected-output"

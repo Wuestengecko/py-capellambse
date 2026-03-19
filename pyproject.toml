@@ -130,16 +130,15 @@ dev = [
   "capellambse-context-diagrams>=0.7.12",
   "docformatter[tomli]==1.7.7",
   "jupyterlab==4.5.2",
-  "mypy==1.19.1",
   "maturin>=1.9.6",
   "maturin-import-hook>=0.3.0",
   "pandas>=2.3.0",
   "pre-commit==4.5.1",
-  "pylsp-mypy==0.7.0",
   "pytest-cov>=7.0.0",
   "python-lsp-server[rope]==1.14.0",
   "reuse==6.2.0",
   "ruff==0.14.11",
+  "ty>=0.0.32",
   "xlsxwriter>=3.2.5",
 ]
 
@@ -150,7 +149,6 @@ typecheck = [
   "diskcache==5.6.3",
   "jinja2==3.1.6",
   "markupsafe==3.0.3",
-  "mypypp==0.1.1",
   "pillow==12.1.0",
   "platformdirs==4.5.1",
   "requests-mock==1.12.1",
@@ -221,30 +219,19 @@ wrap-summaries = 79
 module-name = "capellambse._compiled"
 include = ["capellambse/known_models/*.json"]
 
-[tool.mypy]
-check_untyped_defs = true
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-show_error_codes = true
-warn_redundant_casts = true
-warn_unreachable = true
-warn_unused_ignores = true
-plugins = ["mypypp.deprecated"]
-python_version = "3.11"
+[tool.ty.environment]
+python-version = "3.11"
 
-[[tool.mypy.overrides]]
-# Untyped third party libraries
-module = [
-  "cairosvg.*",
-  "cssutils.*",
-  "diskcache.*",
-  "lxml.*",
-  "PIL.*",
-  "requests_mock.*",
-  "svgwrite.*",
+[tool.ty.analysis]
+allowed-unresolved-imports = [
+  "cairosvg.**",
+  "cssutils.**",
+  "diskcache.**",
+  "lxml.**",
+  "PIL.**",
+  "requests_mock.**",
+  "svgwrite.**",
 ]
-ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = """

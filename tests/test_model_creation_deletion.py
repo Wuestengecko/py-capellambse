@@ -7,7 +7,7 @@ import pytest
 import capellambse.metamodel as mm
 import capellambse.model as m
 
-from .conftest import Models  # type: ignore
+from .conftest import Models
 
 XPATH_UUID = "//*[@id={!r}]"
 
