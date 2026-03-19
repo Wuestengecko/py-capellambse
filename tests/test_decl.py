@@ -18,7 +18,7 @@ from capellambse import decl, helpers
 from capellambse.extensions import reqif
 from capellambse.filehandler import git
 
-from .conftest import INSTALLED_PACKAGE, TEST_DATA, Models  # type: ignore
+from .conftest import INSTALLED_PACKAGE, TEST_DATA, Models
 
 DATAPATH = TEST_DATA / "decl"
 

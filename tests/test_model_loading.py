@@ -23,7 +23,7 @@ from capellambse import helpers
 from capellambse.filehandler import gitlab_artifacts, memory
 from capellambse.loader import exs
 
-from .conftest import TEST_DATA, Models  # type: ignore
+from .conftest import TEST_DATA, Models
 
 DUMMY_SVG = b'<svg xmlns="http://www.w3.org/2000/svg"/>'
 DUMMY_PNG_B64 = (

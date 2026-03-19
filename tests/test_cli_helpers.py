@@ -7,7 +7,7 @@ import pytest
 
 import capellambse
 
-from .conftest import INSTALLED_PACKAGE, Models  # type: ignore
+from .conftest import INSTALLED_PACKAGE, Models
 
 (MODEL_PATH,) = Models.test7_0.glob("*.aird")
 JSON_PATH = INSTALLED_PACKAGE.joinpath("known_models", "test-7.0.json")
